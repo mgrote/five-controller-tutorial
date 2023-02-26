@@ -9,9 +9,13 @@ metadata:
 spec:
   group: personal-iot.frup.org
   names:
+    categories:
+    - all
     kind: Location
     listKind: LocationList
     plural: locations
+    shortNames:
+    - loc
     singular: location
   scope: Namespaced
   versions:
@@ -35,13 +39,23 @@ spec:
           spec:
             description: LocationSpec defines the desired state of Location
             properties:
-              foo:
-                description: Foo is an example field of Location. Edit location_types.go
-                  to remove/update
+              mood:
+                description: The mood the location should be in.
                 type: string
             type: object
           status:
             description: LocationStatus defines the observed state of Location
+            properties:
+              consumption:
+                format: int32
+                type: integer
+              consumptionunit:
+                type: string
+              mood:
+                description: The mood the location currently is.
+                type: string
+            required:
+            - mood
             type: object
         type: object
     served: true

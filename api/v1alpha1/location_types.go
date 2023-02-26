@@ -25,21 +25,21 @@ import (
 
 // LocationSpec defines the desired state of Location
 type LocationSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Location. Edit location_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// The mood the location should be in.
+	Mood string `json:"mood,omitempty"`
 }
 
 // LocationStatus defines the observed state of Location
 type LocationStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// The mood the location currently is.
+	Mood            string `json:"mood"`
+	Consumption     int32  `json:"consumption,omitempty"`
+	ConsumptionUnit string `json:"consumptionunit,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=locations,scope=Namespaced,categories=all,shortName=loc
 
 // Location is the Schema for the locations API
 type Location struct {

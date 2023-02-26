@@ -25,21 +25,25 @@ import (
 
 // PowerstripSpec defines the desired state of Powerstrip
 type PowerstripSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Powerstrip. Edit powerstrip_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	/// Poweroutlets to be part of this powerstrip
+	Outlets            []*Poweroutlet `json:"poweroutlets,omitempty"`
+	MQTTStateTopik     string         `json:"mqttstatetopik,omitempty"`
+	MQTTTelemetryTopik string         `json:"mqtttelemetrytopik,omitempty"`
+	LocationName       string         `json:"location"`
 }
 
 // PowerstripStatus defines the observed state of Powerstrip
 type PowerstripStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Poweroutlets that are currently part of this powerstrip
+	Outlets         []string `json:"poweroutlets,omitempty"`
+	Location        string   `json:"location,omitempty"`
+	Consumption     int32    `json:"consumption,omitempty"`
+	ConsumptionUnit string   `json:"consumptionunit,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=powerstrips,scope=Namespaced,categories=all;power,shortName=strip
 
 // Powerstrip is the Schema for the powerstrips API
 type Powerstrip struct {

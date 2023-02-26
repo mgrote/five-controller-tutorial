@@ -20,26 +20,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // PoweroutletSpec defines the desired state of Poweroutlet
 type PoweroutletSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Poweroutlet. Edit poweroutlet_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// The desired switch status.
+	// +kubebuilder:default:=OFF
+	// +kubebuilder:validation:Enum:=ON;OFF
+	Switch           string `json:"switch,omitempty"`
+	OutletName       string `json:"outletName,omitempty"`
+	MQTTStatusTopik  string `json:"mqttstatustopik,omitempty"`
+	MQTTCommandTopik string `json:"mqttcommandtopik,omitempty"`
 }
 
 // PoweroutletStatus defines the observed state of Poweroutlet
 type PoweroutletStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Switch          string `json:"on,omitempty"`
+	Consumption     int32  `json:"consumption,omitempty"`
+	ConsumptionUnit string `json:"consumptionunit,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=poweroutlets,scope=Namespaced,categories=all;power,shortName=outlet
 
 // Poweroutlet is the Schema for the poweroutlets API
 type Poweroutlet struct {

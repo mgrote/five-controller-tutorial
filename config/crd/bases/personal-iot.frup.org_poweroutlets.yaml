@@ -9,9 +9,14 @@ metadata:
 spec:
   group: personal-iot.frup.org
   names:
+    categories:
+    - all
+    - power
     kind: Poweroutlet
     listKind: PoweroutletList
     plural: poweroutlets
+    shortNames:
+    - outlet
     singular: poweroutlet
   scope: Namespaced
   versions:
@@ -35,13 +40,30 @@ spec:
           spec:
             description: PoweroutletSpec defines the desired state of Poweroutlet
             properties:
-              foo:
-                description: Foo is an example field of Poweroutlet. Edit poweroutlet_types.go
-                  to remove/update
+              mqttcommandtopik:
+                type: string
+              mqttstatustopik:
+                type: string
+              outletName:
+                type: string
+              switch:
+                default: "OFF"
+                description: The desired switch status.
+                enum:
+                - "ON"
+                - "OFF"
                 type: string
             type: object
           status:
             description: PoweroutletStatus defines the observed state of Poweroutlet
+            properties:
+              consumption:
+                format: int32
+                type: integer
+              consumptionunit:
+                type: string
+              "on":
+                type: string
             type: object
         type: object
     served: true
