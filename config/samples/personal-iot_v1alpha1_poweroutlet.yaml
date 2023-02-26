@@ -7,6 +7,7 @@ metadata:
     app.kubernetes.io/part-of: controller-tutorial
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: controller-tutorial
-  name: poweroutlet-sample
+  name: light-one
 spec:
-  # TODO(user): Add fields here
+  mqttstatustopik: "stat/gosund_p1_1_12FCA5/POWER1"
+  mqttcommandtopik: "cmnd/gosund_p1_1_12FCA5/POWER1"

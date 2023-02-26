@@ -17,10 +17,15 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/mgrote/personal-iot/internal"
 )
 
 // log is for logging in this package.
@@ -42,7 +47,17 @@ var _ webhook.Defaulter = &Poweroutlet{}
 func (r *Poweroutlet) Default() {
 	poweroutletlog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	// TODO lecture ---> why is OFF set in any case (enum with default)
+	if r.Spec.Switch == "" {
+		r.Spec.Switch = internal.PowerOffSignal
+	}
+	// TODO lecture ---> code later in stead of switch
+	if r.Spec.OutletName == "" {
+		r.Spec.OutletName = "outlet" + rand.String(4)
+	}
+	if r.Name == "" {
+		r.Name = r.Spec.OutletName
+	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -54,7 +69,9 @@ var _ webhook.Validator = &Poweroutlet{}
 func (r *Poweroutlet) ValidateCreate() error {
 	poweroutletlog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
+	if r.Spec.Switch == internal.PowerOnSignal {
+		return fmt.Errorf("%s is an undesired state for a switch during create, please check your device and set Spec.Switch to %s", internal.PowerOnSignal, internal.PowerOffSignal)
+	}
 	return nil
 }
 

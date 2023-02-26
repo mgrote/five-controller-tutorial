@@ -91,7 +91,8 @@ docker-build: test ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
-.PHONY: kind-load-image
+.PHONY: kind-load
+kind-load: ## Load image into kind cluster.
 	kind load docker-image ${IMG} --name personal-iot
 
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple

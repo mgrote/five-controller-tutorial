@@ -50,7 +50,7 @@ var _ = Describe("Power outlet controller", func() {
 			// TODO lecture ---> remove Switch to see defaulting
 			powerOutlet := &personaliotv1alpha1.Poweroutlet{
 				Spec: personaliotv1alpha1.PoweroutletSpec{
-					Switch:           internal.PowerOnSignal,
+					Switch:           internal.PowerOffSignal,
 					OutletName:       "light-one",
 					MQTTStatusTopik:  "stat/gosund_p1_1_12FCA5/POWER1",
 					MQTTCommandTopik: "cmnd/gosund_p1_1_12FCA5/POWER1",
