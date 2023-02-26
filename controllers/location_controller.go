@@ -49,7 +49,10 @@ type LocationReconciler struct {
 func (r *LocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// TODO: check mood if power strips are with this location available
+
+	// TODO: bild in the following error ---> location controller tries to set up the mood directly through mqtt,
+	//  but does not set the switch in the custom power switch resource, so the power switch controller roles back.
 
 	return ctrl.Result{}, nil
 }

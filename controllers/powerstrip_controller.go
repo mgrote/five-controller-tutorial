@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,11 +48,83 @@ type PowerstripReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.1/pkg/reconcile
 func (r *PowerstripReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithValues("PowerstripReconciler", req.NamespacedName)
 
-	// TODO(user): your logic here
+	powerStrip := &personaliotv1alpha1.Powerstrip{}
+	if err := r.Get(ctx, req.NamespacedName, powerStrip); err != nil {
+		logger.Error(err, "unable to fetch power outlet")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	location, err := r.createLocationIfNotExists(ctx, powerStrip)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	outlets, err := r.getOrCreateOutlets(ctx, powerStrip)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	existingOutletNames, err := r.checkOutletReachability(outlets)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	powerStrip.Status.Location = location.Name
+	powerStrip.Status.Outlets = existingOutletNames
+	if err := r.Status().Update(ctx, powerStrip); err != nil {
+		logger.Error(err, "update PowerOutlet status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *PowerstripReconciler) checkOutletReachability(outlets []*personaliotv1alpha1.Poweroutlet) ([]string, error) {
+	var existingOutletNames []string
+	for _, outlet := range outlets {
+		existingOutletNames = append(existingOutletNames, outlet.Name)
+	}
+	return existingOutletNames, nil
+}
+
+func (r *PowerstripReconciler) getOrCreateOutlets(ctx context.Context, powerStrip *personaliotv1alpha1.Powerstrip) ([]*personaliotv1alpha1.Poweroutlet, error) {
+	desiredOutlets := powerStrip.Spec.Outlets
+	var existingOutlets []*personaliotv1alpha1.Poweroutlet
+	for _, outlet := range desiredOutlets {
+		err := r.Get(ctx, client.ObjectKey{Namespace: powerStrip.Namespace, Name: outlet.Spec.OutletName}, outlet)
+		if client.IgnoreNotFound(err) != nil {
+			return nil, err
+		}
+		if errors.IsNotFound(err) {
+			outlet.Name = outlet.Spec.OutletName
+			outlet.Namespace = powerStrip.Namespace
+			err = r.Create(ctx, outlet)
+			if err != nil {
+				return nil, err
+			}
+		}
+		existingOutlets = append(existingOutlets, outlet)
+	}
+	return existingOutlets, nil
+}
+
+func (r *PowerstripReconciler) createLocationIfNotExists(ctx context.Context, powerStrip *personaliotv1alpha1.Powerstrip) (*personaliotv1alpha1.Location, error) {
+	location := &personaliotv1alpha1.Location{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: powerStrip.Namespace, Name: powerStrip.Spec.LocationName}, location)
+	if client.IgnoreNotFound(err) != nil {
+		return nil, err
+	}
+	if errors.IsNotFound(err) {
+		location.Namespace = powerStrip.Namespace
+		location.Name = powerStrip.Spec.LocationName
+		err = r.Create(ctx, location)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return location, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -17,6 +17,8 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -40,6 +42,7 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
+var ctx context.Context
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -51,6 +54,9 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
+	Expect(os.Setenv("KUBEBUILDER_ASSETS", "../bin/k8s/1.25.0-linux-amd64")).To(Succeed())
+	//Expect(os.Setenv("KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT", "true")).To(Succeed())
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
@@ -70,7 +76,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
 })
 
 var _ = AfterSuite(func() {
