@@ -1,0 +1,31 @@
+# permissions for end users to edit mqttcontrollerconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: mqttcontrollerconfig-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/part-of: controller-tutorial
+    app.kubernetes.io/managed-by: kustomize
+  name: mqttcontrollerconfig-editor-role
+rules:
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - mqttcontrollerconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - mqttcontrollerconfigs/status
+  verbs:
+  - get

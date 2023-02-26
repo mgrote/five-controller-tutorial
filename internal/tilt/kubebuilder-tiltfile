@@ -1,0 +1,101 @@
+load('ext://restart_process', 'docker_build_with_restart')
+
+# adapted from https://github.com/tilt-dev/tilt-extensions/tree/master/kubebuilder
+
+def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases;'):
+
+    DIRNAME = os.path.abspath(os. getcwd())
+    BINDIR = os.path.join(DIRNAME, 'bin')
+    print("curent directory ", DIRNAME)
+
+                       # gcr.io/distroless/static:nonroot
+    DOCKERFILE = '''FROM ubuntu:jammy
+    WORKDIR /
+    USER 65532:65532
+    COPY ./tilt_bin/manager /
+    CMD ["/manager"]
+    '''
+
+    def controllergen():
+        return BINDIR + '/controller-gen '
+
+    def kustomize():
+        return BINDIR + '/kustomize '
+
+    def yaml():
+        return local('cd config/manager; ' + kustomize() +  'edit set image controller=' + IMG + '; cd ../..; ' + kustomize() + 'build config/default')
+
+    def manifests():
+        return controllergen() + CONTROLLERGEN
+
+    def generate():
+        return controllergen() + 'object:headerFile="hack/boilerplate.go.txt" paths="./...";'
+
+    def vetfmt():
+        return 'go vet ./...; go fmt ./...'
+
+    # build to tilt_bin beause kubebuilder has a dockerignore for bin/
+    def binary():
+        return 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o tilt_bin/manager main.go'
+
+    local(manifests() + generate())
+
+    local_resource('CRD', manifests() + ' ' + kustomize() + 'build config/crd | kubectl apply -f -', deps=["api"])
+
+    k8s_yaml(yaml())
+
+    deps = ['controllers', 'main.go']
+    deps.append('api')
+
+    local_resource('Watch&Compile', generate() + binary(), deps=deps, ignore=['*/*/zz_generated.deepcopy.go'])
+
+    # local_resource('Sample YAML', 'kubectl apply -f ./config/samples', deps=["./config/samples"], resource_deps=[DIRNAME + "-controller-manager"])
+
+    docker_build_with_restart(IMG, '.',
+     dockerfile_contents=DOCKERFILE,
+     entrypoint='/manager',
+     only=['./tilt_bin/manager'],
+     live_update=[
+           sync('./tilt_bin/manager', '/manager'),
+       ]
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+#    DOCKERFILE = '''FROM golang:1.19 as builder
+#    RUN wget --output-document /restart.sh --quiet https://raw.githubusercontent.com/windmilleng/rerun-process-wrapper/master/restart.sh  && \
+#        wget --output-document /start.sh --quiet https://raw.githubusercontent.com/windmilleng/rerun-process-wrapper/master/start.sh && \
+#        chmod ugo+x /start.sh && chmod ugo+x /restart.sh
+#    FROM gcr.io/distroless/base:debug as tilt
+#    WORKDIR /
+#    # USER 65532:65532
+#    COPY --from=bilder /start.sh /
+#    COPY --from=builder /restart.sh /
+#    COPY ./tilt_bin/manager /
+#    ENTRYPOINT ["/manager"]
+#    '''
+#
+#    docker_build(
+#        ref = IMG,
+#        context = '.',
+#        dockerfile = DOCKERFILE,
+#        target = "tilt",
+#        entrypoint = ["sh", "/start.sh", "/manager"],
+#        only=['./tilt_bin/manager'],
+#        live_update = [
+#            sync('./tilt_bin/manager', '/manager'),
+#            run("sh /restart.sh"),
+#        ],
+#    )
+
+

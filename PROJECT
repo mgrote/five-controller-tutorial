@@ -1,0 +1,47 @@
+componentConfig: true
+domain: frup.org
+layout:
+- go.kubebuilder.io/v3
+projectName: controller-tutorial
+repo: github.com/mgrote/personal-iot
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frup.org
+  group: personal-iot
+  kind: Powerstrip
+  path: github.com/mgrote/personal-iot/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frup.org
+  group: personal-iot
+  kind: Poweroutlet
+  path: github.com/mgrote/personal-iot/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: frup.org
+  group: personal-iot
+  kind: Location
+  path: github.com/mgrote/personal-iot/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: frup.org
+  group: personal-iot
+  kind: MQTTControllerConfig
+  path: github.com/mgrote/personal-iot/api/v1alpha1
+  version: v1alpha1
+version: "3"

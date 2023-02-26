@@ -1,0 +1,12 @@
+apiVersion: personal-iot.frup.org/v1alpha1
+kind: MQTTControllerConfig
+metadata:
+  labels:
+    app.kubernetes.io/name: mqttcontrollerconfig
+    app.kubernetes.io/instance: mqttcontrollerconfig-sample
+    app.kubernetes.io/part-of: controller-tutorial
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: controller-tutorial
+  name: mqttcontrollerconfig-sample
+spec:
+  # TODO(user): Add fields here
