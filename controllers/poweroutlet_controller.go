@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,12 +26,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
+	"github.com/mgrote/personal-iot/internal"
+	"github.com/mgrote/personal-iot/internal/mqttiot"
 )
 
 // PoweroutletReconciler reconciles a Poweroutlet object
 type PoweroutletReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme         *runtime.Scheme
+	mqttSubscriber mqttiot.MQTTSubscriber
+	mqttPublisher  mqttiot.MQTTPublisher
 }
 
 //+kubebuilder:rbac:groups=personal-iot.frup.org,resources=poweroutlets,verbs=get;list;watch;create;update;patch;delete
@@ -76,7 +81,42 @@ func (r *PoweroutletReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (*string, error) {
 
-	return &powerOutlet.Spec.Switch, nil
+	if err := r.mqttPublisher.Connect(); err != nil {
+		return nil, err
+	}
+
+	defer r.mqttSubscriber.Disconnect(500)
+
+	// request desired state from outlet
+	if err := r.mqttPublisher.Publish(powerOutlet.Spec.MQTTCommandTopik, powerOutlet.Spec.Switch, 1, true); err != nil {
+		return nil, err
+	}
+	r.mqttPublisher.Disconnect(500)
+
+	// check if state was reached, keep in mind: there are some timing problems
+	if err := r.mqttSubscriber.Connect(); err != nil {
+		return nil, err
+	}
+
+	messageChannel := make(chan mqttiot.MQTTMessage)
+	if err := r.mqttSubscriber.Subscribe(powerOutlet.Spec.MQTTStatusTopik, 1, messageChannel); err != nil {
+		return nil, err
+	}
+
+	var currentState string
+	for i := 0; i < 2; i++ {
+		incoming := <-messageChannel
+		currentState = incoming.Msg
+	}
+
+	close(messageChannel)
+
+	// check for valid message format
+	if currentState == internal.PowerOnSignal || currentState == internal.PowerOffSignal {
+		return &currentState, nil
+	}
+
+	return nil, fmt.Errorf("unexpected state %s found, expected where %s or %s", currentState, internal.PowerOnSignal, internal.PowerOffSignal)
 
 }
 

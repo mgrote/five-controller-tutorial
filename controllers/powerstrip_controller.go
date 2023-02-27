@@ -26,12 +26,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
+	"github.com/mgrote/personal-iot/internal/mqttiot"
 )
 
 // PowerstripReconciler reconciles a Powerstrip object
 type PowerstripReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme         *runtime.Scheme
+	mqttSubscriber mqttiot.MQTTSubscriber
 }
 
 //+kubebuilder:rbac:groups=personal-iot.frup.org,resources=powerstrips,verbs=get;list;watch;create;update;patch;delete
@@ -82,9 +84,26 @@ func (r *PowerstripReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 func (r *PowerstripReconciler) checkOutletReachability(outlets []*personaliotv1alpha1.Poweroutlet) ([]string, error) {
+
+	if err := r.mqttSubscriber.Connect(); err != nil {
+		return nil, err
+	}
+
+	defer r.mqttSubscriber.Disconnect(500)
+
 	var existingOutletNames []string
 	for _, outlet := range outlets {
-		existingOutletNames = append(existingOutletNames, outlet.Name)
+		messageChannel := make(chan mqttiot.MQTTMessage)
+		if err := r.mqttSubscriber.Subscribe(outlet.Spec.MQTTStatusTopik, 1, messageChannel); err != nil {
+			return nil, err
+		}
+
+		incoming := <-messageChannel
+		if len(incoming.Msg) > 1 {
+			existingOutletNames = append(existingOutletNames, outlet.Name)
+		}
+
+		close(messageChannel)
 	}
 	return existingOutletNames, nil
 }
