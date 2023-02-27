@@ -72,9 +72,10 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	var err error
+	mqttControllerConfig := &personaliotv1alpha1.MQTTControllerConfig{}
 	options := ctrl.Options{Scheme: scheme}
 	if configFile != "" {
-		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile))
+		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(mqttControllerConfig))
 		if err != nil {
 			setupLog.Error(err, "unable to load the config file")
 			os.Exit(1)

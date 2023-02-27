@@ -18,36 +18,25 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	controllerruntime "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// MQTTControllerConfigSpec defines the desired state of MQTTControllerConfig
-type MQTTControllerConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of MQTTControllerConfig. Edit mqttcontrollerconfig_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
-// MQTTControllerConfigStatus defines the observed state of MQTTControllerConfig
-type MQTTControllerConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+type MQTTConfig struct {
+	Broker   *string `json:"broker,omitempty"`
+	ClientID *string `json:"clientID,omitempty"`
+	// TODO should be a secret
+	UserName *string `json:"userName,omitempty"`
+	Password *string `json:"password,omitempty"`
 }
 
 //+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
 
 // MQTTControllerConfig is the Schema for the mqttcontrollerconfigs API
 type MQTTControllerConfig struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta                                      `json:",inline"`
+	controllerruntime.ControllerManagerConfigurationSpec `json:",inline"`
 
-	Spec   MQTTControllerConfigSpec   `json:"spec,omitempty"`
-	Status MQTTControllerConfigStatus `json:"status,omitempty"`
+	MQTTConfig MQTTConfig `json:"mqttConfig,omitempty"`
 }
 
 //+kubebuilder:object:root=true
