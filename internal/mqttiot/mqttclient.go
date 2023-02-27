@@ -62,9 +62,12 @@ func (f *FakeMQTTSubscriber) Subscribe(_ string, _ byte, messages chan<- MQTTMes
 	if f.SubscribeError != nil {
 		return f.SubscribeError
 	}
-	for _, message := range f.ExpectedMessages {
-		messages <- message
-	}
+	go func() {
+		//defer close(messages)
+		for _, message := range f.ExpectedMessages {
+			messages <- message
+		}
+	}()
 	return nil
 }
 
