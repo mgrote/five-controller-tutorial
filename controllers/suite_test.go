@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
+	"github.com/mgrote/personal-iot/internal"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -49,6 +50,7 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
+var realClient bool
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -85,6 +87,11 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+
+	useRealClient, found := os.LookupEnv(internal.MqttTestClient)
+	if found && useRealClient == "real" {
+		realClient = true
+	}
 
 	// start webhook server using Manager
 

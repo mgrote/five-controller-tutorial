@@ -7,4 +7,5 @@ const (
 	MqttPassWord   = "MQTT_PASS"
 	PowerOnSignal  = "ON"
 	PowerOffSignal = "OFF"
+	MqttTestClient = "MQTT_TEST_CLIENT" // values "real" for real MQTT client, other or not set uses fake client
 )

@@ -73,7 +73,11 @@ func main() {
 
 	var err error
 	mqttControllerConfig := &personaliotv1alpha1.MQTTControllerConfig{}
-	options := ctrl.Options{Scheme: scheme}
+	options := ctrl.Options{
+		Scheme:                 scheme,
+		HealthProbeBindAddress: probeAddr,
+		MetricsBindAddress:     metricsAddr,
+	}
 	if configFile != "" {
 		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(mqttControllerConfig))
 		if err != nil {

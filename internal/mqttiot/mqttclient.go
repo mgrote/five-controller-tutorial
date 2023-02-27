@@ -6,6 +6,7 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
 	"github.com/mgrote/personal-iot/internal"
@@ -63,7 +64,6 @@ func (f *FakeMQTTSubscriber) Subscribe(_ string, _ byte, messages chan<- MQTTMes
 		return f.SubscribeError
 	}
 	go func() {
-		//defer close(messages)
 		for _, message := range f.ExpectedMessages {
 			messages <- message
 		}
@@ -85,9 +85,12 @@ type PahoMQTTPublisher struct {
 }
 
 func NewPahoMQTTPublisher(clientOpts *mqtt.ClientOptions) MQTTPublisher {
+	// copy client opts, the clientID has to be unique to prevent connection losses
+	opts := *clientOpts
+	opts.ClientID = opts.ClientID + rand.String(4)
 	return &PahoMQTTPublisher{
-		MQTTClientOpts: clientOpts,
-		MQTTClient:     mqtt.NewClient(clientOpts),
+		MQTTClientOpts: &opts,
+		MQTTClient:     mqtt.NewClient(&opts),
 	}
 }
 
@@ -103,7 +106,7 @@ func (p *PahoMQTTPublisher) Publish(topik string, message string, qos byte, reta
 	if !token.WaitTimeout(time.Second * 5) {
 		return fmt.Errorf("client could not publish to MQTT topik %s", topik)
 	}
-	return nil
+	return token.Error()
 }
 
 func (p *PahoMQTTPublisher) Disconnect(waitMs uint) {
@@ -116,9 +119,12 @@ type PahoMQTTSubscriber struct {
 }
 
 func NewPahoMQTTSubscriber(clientOpts *mqtt.ClientOptions) MQTTSubscriber {
+	// copy client opts, the clientID has to be unique to prevent connection losses
+	opts := *clientOpts
+	opts.ClientID = opts.ClientID + rand.String(4)
 	return &PahoMQTTSubscriber{
-		MQTTClientOpts: clientOpts,
-		MQTTClient:     mqtt.NewClient(clientOpts),
+		MQTTClientOpts: &opts,
+		MQTTClient:     mqtt.NewClient(&opts),
 	}
 }
 

@@ -79,8 +79,8 @@ func (r *PoweroutletReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	return ctrl.Result{}, nil
 }
-func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (*string, error) {
 
+func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (*string, error) {
 	if err := r.MQTTPublisher.Connect(); err != nil {
 		return nil, err
 	}
@@ -95,19 +95,28 @@ func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, p
 	if err := r.MQTTSubscriber.Connect(); err != nil {
 		return nil, err
 	}
-	defer r.MQTTSubscriber.Disconnect(500)
 
 	messageChannel := make(chan mqttiot.MQTTMessage)
 	if err := r.MQTTSubscriber.Subscribe(powerOutlet.Spec.MQTTStatusTopik, 1, messageChannel); err != nil {
 		return nil, err
 	}
 
+	// Wait for switch state change.
+	// When subscribing the power outlet status topik, the first message delivers immediately the current state.
+	// The status change may come later, so we have to wait for the next messages.
 	var currentState string
 	for i := 0; i < 2; i++ {
 		incoming := <-messageChannel
 		currentState = incoming.Msg
+		// TODO output improves the timing, think about a wait ;-).
+		fmt.Println("current state", currentState)
+		if currentState == powerOutlet.Spec.Switch {
+			break
+		}
 	}
 
+	r.MQTTSubscriber.Disconnect(500)
+	// TODO implement gracefull close of message channel
 	close(messageChannel)
 
 	// check for valid message format

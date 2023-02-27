@@ -98,23 +98,27 @@ var _ = Describe("Power outlet controller", func() {
 
 			var publisher mqttiot.MQTTPublisher
 			var subscriber mqttiot.MQTTSubscriber
-			publisher = &mqttiot.FakeMQTTPublisher{
-				ConnectError: nil,
-				PublishError: nil,
-			}
-			subscriber = &mqttiot.FakeMQTTSubscriber{
-				ConnectError:     nil,
-				SubscribeError:   nil,
-				UnsubscribeError: nil,
-				ExpectedMessages: []mqttiot.MQTTMessage{{
-					Topik:     powerOutlet.Spec.MQTTStatusTopik,
-					Msg:       internal.PowerOffSignal,
-					Duplicate: false,
-				}, {
-					Topik:     powerOutlet.Spec.MQTTStatusTopik,
-					Msg:       internal.PowerOffSignal,
-					Duplicate: false,
-				}},
+
+			if realClient {
+				mqttClientOpts, err := mqttiot.ClientOptsFromEnv()
+				Expect(err).ShouldNot(HaveOccurred())
+				subscriber = mqttiot.NewPahoMQTTSubscriber(mqttClientOpts)
+				publisher = mqttiot.NewPahoMQTTPublisher(mqttClientOpts)
+			} else {
+				publisher = &mqttiot.FakeMQTTPublisher{
+					ConnectError: nil,
+					PublishError: nil,
+				}
+				subscriber = &mqttiot.FakeMQTTSubscriber{
+					ConnectError:     nil,
+					SubscribeError:   nil,
+					UnsubscribeError: nil,
+					ExpectedMessages: []mqttiot.MQTTMessage{{
+						Topik:     powerOutlet.Spec.MQTTStatusTopik,
+						Msg:       internal.PowerOffSignal,
+						Duplicate: false,
+					}},
+				}
 			}
 
 			powerOutletController := &PoweroutletReconciler{
@@ -146,21 +150,23 @@ var _ = Describe("Power outlet controller", func() {
 			Expect(powerOutlet.Spec.Switch).To(BeIdenticalTo(internal.PowerOnSignal))
 			Expect(powerOutlet.Status.Switch).To(BeIdenticalTo(internal.PowerOffSignal))
 
-			subscriber = &mqttiot.FakeMQTTSubscriber{
-				ConnectError:     nil,
-				SubscribeError:   nil,
-				UnsubscribeError: nil,
-				ExpectedMessages: []mqttiot.MQTTMessage{{
-					Topik:     powerOutlet.Spec.MQTTStatusTopik,
-					Msg:       internal.PowerOffSignal,
-					Duplicate: false,
-				}, {
-					Topik:     powerOutlet.Spec.MQTTStatusTopik,
-					Msg:       internal.PowerOnSignal,
-					Duplicate: false,
-				}},
+			if !realClient {
+				subscriber = &mqttiot.FakeMQTTSubscriber{
+					ConnectError:     nil,
+					SubscribeError:   nil,
+					UnsubscribeError: nil,
+					ExpectedMessages: []mqttiot.MQTTMessage{{
+						Topik:     powerOutlet.Spec.MQTTStatusTopik,
+						Msg:       internal.PowerOffSignal,
+						Duplicate: false,
+					}, {
+						Topik:     powerOutlet.Spec.MQTTStatusTopik,
+						Msg:       internal.PowerOnSignal,
+						Duplicate: false,
+					}},
+				}
+				powerOutletController.MQTTSubscriber = subscriber
 			}
-			powerOutletController.MQTTSubscriber = subscriber
 
 			_, err = powerOutletController.Reconcile(ctx, reconcile.Request{
 				NamespacedName: powerOutletKey,

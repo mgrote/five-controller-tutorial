@@ -107,15 +107,22 @@ var _ = Describe("Power strip controller", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 
 			var subscriber mqttiot.MQTTSubscriber
-			subscriber = &mqttiot.FakeMQTTSubscriber{
-				ConnectError:     nil,
-				SubscribeError:   nil,
-				UnsubscribeError: nil,
-				ExpectedMessages: []mqttiot.MQTTMessage{{
-					Topik:     "someIgnoredTopik",
-					Msg:       internal.PowerOffSignal,
-					Duplicate: false,
-				}},
+
+			if realClient {
+				mqttClientOpts, err := mqttiot.ClientOptsFromEnv()
+				Expect(err).ShouldNot(HaveOccurred())
+				subscriber = mqttiot.NewPahoMQTTSubscriber(mqttClientOpts)
+			} else {
+				subscriber = &mqttiot.FakeMQTTSubscriber{
+					ConnectError:     nil,
+					SubscribeError:   nil,
+					UnsubscribeError: nil,
+					ExpectedMessages: []mqttiot.MQTTMessage{{
+						Topik:     "someIgnoredTopik",
+						Msg:       internal.PowerOffSignal,
+						Duplicate: false,
+					}},
+				}
 			}
 
 			powerStripController := &PowerstripReconciler{
