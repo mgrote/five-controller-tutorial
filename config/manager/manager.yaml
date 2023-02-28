@@ -66,8 +66,7 @@ spec:
         # seccompProfile:
         #   type: RuntimeDefault
       containers:
-      - command:
-        - /manager
+      - command: ["/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager", "--"]
         image: mgrotedev/personal-iot:v1alpha1
         name: manager
         securityContext:

@@ -29,12 +29,26 @@ type MQTTConfig struct {
 	Password *string `json:"password,omitempty"`
 }
 
+type MQTTProjectConfigSpec struct {
+	// empty
+}
+
+type MQTTControllerConfigStatus struct {
+	// empty
+}
+
 //+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // MQTTControllerConfig is the Schema for the mqttcontrollerconfigs API
 type MQTTControllerConfig struct {
-	metav1.TypeMeta                                      `json:",inline"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
 	controllerruntime.ControllerManagerConfigurationSpec `json:",inline"`
+
+	Spec   MQTTProjectConfigSpec      `json:"spec,omitempty"`
+	Status MQTTControllerConfigStatus `json:"status,omitempty"`
 
 	MQTTConfig MQTTConfig `json:"mqttConfig,omitempty"`
 }

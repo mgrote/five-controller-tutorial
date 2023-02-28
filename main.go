@@ -48,12 +48,33 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+//func getConfig(configFile string) (*personaliotv1alpha1.MQTTControllerConfig, error) {
+//	setupLog.WithValues("config", configFile).Info("found config")
+//	if configFile == "" {
+//		return nil, errors.New("expected config file parameter")
+//	}
+//
+//	mqttControllerConfig := &personaliotv1alpha1.MQTTControllerConfig{}
+//	options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
+//
+//	cfgFile := ctrl.ConfigFile().OfKind(mqttControllerConfig).AtPath(configFile)
+//	if err := cfgFile.InjectScheme(scheme); err != nil {
+//		return nil, errors.Wrap(err, "unable to load config file")
+//	}
+//	if _, err := cfgFile.Complete(); err != nil {
+//		return nil, errors.Wrap(err, "unable to load the config file")
+//	}
+//
+//	return mqttControllerConfig, nil
+//
+//}
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
 	var configFile string
-	flag.StringVar(&configFile, "config", "",
+	flag.StringVar(&configFile, "config", "./config/manager/controller_manager_config.yaml",
 		"The controller will load its initial configuration from this file. "+
 			"Omit this flag to use the default configuration values. "+
 			"Command-line flags override configuration from this file.")
@@ -72,20 +93,27 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	var err error
-	mqttControllerConfig := &personaliotv1alpha1.MQTTControllerConfig{}
+	//mqttControllerConfig, err := getConfig(configFile)
+
 	options := ctrl.Options{
 		Scheme:                 scheme,
 		HealthProbeBindAddress: probeAddr,
 		MetricsBindAddress:     metricsAddr,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "aasdfasdf",
+		Port:                   9443,
 	}
-	if configFile != "" {
-		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(mqttControllerConfig))
-		if err != nil {
-			setupLog.Error(err, "unable to load the config file")
-			os.Exit(1)
-		}
-	}
+	//setupLog.WithValues("config", configFile).Info("found config")
 
+	//ctrlConfig := personaliotv1alpha1.MQTTControllerConfig{}
+	//if configFile != "" {
+	//	options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
+	//	if err != nil {
+	//		setupLog.Error(err, "unable to load the config file")
+	//		os.Exit(1)
+	//	}
+	//}
+	//
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -95,6 +123,7 @@ func main() {
 	if err = (&controllers.PowerstripReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		//MQTTSubscriber: mqttiot.NewPahoMQTTSubscriber(mqttiot.ClientOpts(mqttControllerConfig.MQTTConfig)),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Powerstrip")
 		os.Exit(1)
@@ -102,6 +131,8 @@ func main() {
 	if err = (&controllers.PoweroutletReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		//MQTTSubscriber: mqttiot.NewPahoMQTTSubscriber(mqttiot.ClientOpts(mqttControllerConfig.MQTTConfig)),
+		//MQTTPublisher:  mqttiot.NewPahoMQTTPublisher(mqttiot.ClientOpts(mqttControllerConfig.MQTTConfig)),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Poweroutlet")
 		os.Exit(1)

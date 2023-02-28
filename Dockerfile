@@ -17,20 +17,26 @@ COPY api/ api/
 COPY controllers/ controllers/
 COPY internal/ internal/
 
+#RUN CGO_ENABLED=0 go get -ldflags '-s -w -extldflags -static' github.com/go-delve/delve/cmd/dlv
+COPY dlv dlv
+
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+#RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -gcflags "-N -l" -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-#FROM ubuntu:jammy
+#FROM gcr.io/distroless/static:nonroot
+FROM ubuntu:jammy
 #RUN apt-get update && apt-get install -y dnsutils net-tools && rm -rf /var/lib/apt/lists/*
 WORKDIR /
+COPY --from=builder /workspace/dlv .
 COPY --from=builder /workspace/manager .
+EXPOSE 2345
 USER 65532:65532
-
-ENTRYPOINT ["/manager"]
+#ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager-debug"]

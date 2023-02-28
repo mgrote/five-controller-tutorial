@@ -28,8 +28,9 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
 
     # build to tilt_bin beause kubebuilder has a dockerignore for bin/
     def binary():
-        # return 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags \'-extldflags "-static"\' -o .tilt_bin/manager main.go'
-        return 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o tilt_bin/manager main.go'
+        return 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -gcflags "-N -l" -a -o tilt_bin/manager main.go'
+        # return 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags \'-extldflags "-static"\' -o tilt_bin/manager main.go'
+        # return 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -o tilt_bin/manager main.go'
 
     local(manifests() + generate())
 
@@ -47,9 +48,10 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
                        # gcr.io/distroless/static:nonroot
     DOCKERFILE = '''FROM gcr.io/distroless/base:debug
     WORKDIR /
-    USER 65532:65532
     COPY ./tilt_bin/manager /
-    CMD ["/manager"]
+    COPY dlv /
+    USER 65532:65532
+    CMD ["/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager-debug", "--"]
     '''
 
     docker_build_with_restart(IMG, '.',
