@@ -18,16 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	controllerruntime "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
-
-type MQTTConfig struct {
-	Broker   *string `json:"broker,omitempty"`
-	ClientID *string `json:"clientID,omitempty"`
-	// TODO should be a secret
-	UserName *string `json:"userName,omitempty"`
-	Password *string `json:"password,omitempty"`
-}
 
 type MQTTProjectConfigSpec struct {
 	// empty
@@ -45,12 +36,11 @@ type MQTTControllerConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	controllerruntime.ControllerManagerConfigurationSpec `json:",inline"`
-
 	Spec   MQTTProjectConfigSpec      `json:"spec,omitempty"`
 	Status MQTTControllerConfigStatus `json:"status,omitempty"`
 
-	MQTTConfig MQTTConfig `json:"mqttConfig,omitempty"`
+	MQTTBroker   *string `json:"MQTT_BROKER,omitempty"`
+	MQTTClientID *string `json:"MQTT_CLIENT_ID,omitempty"`
 }
 
 //+kubebuilder:object:root=true

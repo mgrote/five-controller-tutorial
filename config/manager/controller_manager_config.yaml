@@ -8,17 +8,6 @@ metadata:
     app.kubernetes.io/created-by: controller-tutorial
     app.kubernetes.io/part-of: controller-tutorial
     app.kubernetes.io/managed-by: kustomize
-health:
-  healthProbeBindAddress: :8081
-metrics:
-  bindAddress: 127.0.0.1:8080
-webhook:
-  port: 9443
-leaderElection:
-  leaderElect: true
-  resourceName: b012abd2.frup.org
-#mqttConfig:
-#  broker: tcp://192.168.0.70:1883
-#  clientID: personalIOTController
-#  user: admin
-#  password: hivemq
+MQTT_BROKER: tcp://192.168.0.70:1883
+MQTT_CLIENT_ID: personalIOTController
+

@@ -48,8 +48,8 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
                        # gcr.io/distroless/static:nonroot
     DOCKERFILE = '''FROM golang:1.19 as builder
     RUN go install github.com/go-delve/delve/cmd/dlv@latest
-
-    FROM gcr.io/distroless/base:debug
+    # FROM gcr.io/distroless/base:debug
+    FROM ubuntu:jammy
     WORKDIR /
     COPY ./tilt_bin/manager /manager
     COPY --from=builder /go/bin/dlv /dlv
@@ -67,44 +67,7 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
         ]
     )
 
+    # wants https, strange
     #k8s_resource('personal-iot-controller-manager', port_forwards=[2345])
-
-
-
-
-
-
-
-
-
-
-
-
-
-#    DOCKERFILE = '''FROM golang:1.19 as builder
-#    RUN wget --output-document /restart.sh --quiet https://raw.githubusercontent.com/windmilleng/rerun-process-wrapper/master/restart.sh  && \
-#        wget --output-document /start.sh --quiet https://raw.githubusercontent.com/windmilleng/rerun-process-wrapper/master/start.sh && \
-#        chmod ugo+x /start.sh && chmod ugo+x /restart.sh
-#    FROM gcr.io/distroless/base:debug as tilt
-#    WORKDIR /
-#    # USER 65532:65532
-#    COPY --from=bilder /start.sh /
-#    COPY --from=builder /restart.sh /
-#    COPY ./tilt_bin/manager /
-#    ENTRYPOINT ["/manager"]
-#    '''
-#
-#    docker_build(
-#        ref = IMG,
-#        context = '.',
-#        dockerfile = DOCKERFILE,
-#        target = "tilt",
-#        entrypoint = ["sh", "/start.sh", "/manager"],
-#        only=['./tilt_bin/manager'],
-#        live_update = [
-#            sync('./tilt_bin/manager', '/manager'),
-#            run("sh /restart.sh"),
-#        ],
-#    )
 
 

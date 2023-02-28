@@ -33,6 +33,8 @@ import (
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
 	"github.com/mgrote/personal-iot/controllers"
+	"github.com/mgrote/personal-iot/internal/mqttiot"
+
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,27 +49,6 @@ func init() {
 	utilruntime.Must(personaliotv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
-
-//func getConfig(configFile string) (*personaliotv1alpha1.MQTTControllerConfig, error) {
-//	setupLog.WithValues("config", configFile).Info("found config")
-//	if configFile == "" {
-//		return nil, errors.New("expected config file parameter")
-//	}
-//
-//	mqttControllerConfig := &personaliotv1alpha1.MQTTControllerConfig{}
-//	options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
-//
-//	cfgFile := ctrl.ConfigFile().OfKind(mqttControllerConfig).AtPath(configFile)
-//	if err := cfgFile.InjectScheme(scheme); err != nil {
-//		return nil, errors.Wrap(err, "unable to load config file")
-//	}
-//	if _, err := cfgFile.Complete(); err != nil {
-//		return nil, errors.Wrap(err, "unable to load the config file")
-//	}
-//
-//	return mqttControllerConfig, nil
-//
-//}
 
 func main() {
 	var metricsAddr string
@@ -105,47 +86,31 @@ func main() {
 	}
 	setupLog.WithValues("config", configFile).Info("found config")
 
-	//mqttControllerConfig := &personaliotv1alpha1.MQTTControllerConfig{}
-	//if configFile != "" {
-	//	cfgFile := ctrl.ConfigFile().OfKind(mqttControllerConfig).AtPath(configFile)
-	//	if err = cfgFile.InjectScheme(scheme); err != nil {
-	//		setupLog.Error(err, "unable to load config file")
-	//	}
-	//	if _, err = cfgFile.Complete(); err != nil {
-	//		setupLog.Error(err, "unable to load the config file")
-	//	}
-	//}
-
-	//ctrlConfig := personaliotv1alpha1.MQTTControllerConfig{}
-	//if configFile != "" {
-	//	options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
-	//	if err != nil {
-	//		setupLog.Error(err, "unable to load the config file")
-	//		os.Exit(1)
-	//	}
-	//}
-	//mqttConfig := mqttControllerConfig.MQTTConfig
-	//setupLog.WithValues("mqttConfig", mqttConfig).Info("got mqtt config")
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
+	mqttClientOpts, err := mqttiot.ClientOptsFromEnv()
+	if err != nil {
+		setupLog.Error(err, "unable to read mqtt opts from env")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.PowerstripReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		//MQTTSubscriber: mqttiot.NewPahoMQTTSubscriber(mqttiot.ClientOpts(mqttControllerConfig.MQTTConfig)),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		MQTTSubscriber: mqttiot.NewPahoMQTTSubscriber(mqttClientOpts),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Powerstrip")
 		os.Exit(1)
 	}
 	if err = (&controllers.PoweroutletReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		//MQTTSubscriber: mqttiot.NewPahoMQTTSubscriber(mqttiot.ClientOpts(mqttControllerConfig.MQTTConfig)),
-		//MQTTPublisher:  mqttiot.NewPahoMQTTPublisher(mqttiot.ClientOpts(mqttControllerConfig.MQTTConfig)),
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+		MQTTSubscriber: mqttiot.NewPahoMQTTSubscriber(mqttClientOpts),
+		MQTTPublisher:  mqttiot.NewPahoMQTTPublisher(mqttClientOpts),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Poweroutlet")
 		os.Exit(1)

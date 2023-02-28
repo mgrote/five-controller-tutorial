@@ -14,3 +14,8 @@ images:
 - name: controller
   newName: mgrotedev/personal-iot
   newTag: v1alpha1
+
+secretGenerator:
+- envs:
+  - mqtt.env
+  name: mqtt-broker-creds

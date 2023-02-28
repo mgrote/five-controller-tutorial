@@ -1,0 +1,882 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: system
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: namespace
+    app.kubernetes.io/part-of: controller-tutorial
+    control-plane: controller-manager
+  name: personal-iot
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: personal-iot/personal-iot-serving-cert
+    controller-gen.kubebuilder.io/version: v0.10.0
+  name: locations.personal-iot.frup.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: personal-iot-webhook-service
+          namespace: personal-iot
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: personal-iot.frup.org
+  names:
+    categories:
+    - all
+    kind: Location
+    listKind: LocationList
+    plural: locations
+    shortNames:
+    - loc
+    singular: location
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Location is the Schema for the locations API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LocationSpec defines the desired state of Location
+            properties:
+              mood:
+                description: The mood the location should be in.
+                type: string
+            type: object
+          status:
+            description: LocationStatus defines the observed state of Location
+            properties:
+              consumption:
+                format: int32
+                type: integer
+              consumptionunit:
+                type: string
+              mood:
+                description: The mood the location currently is.
+                type: string
+            required:
+            - mood
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: personal-iot/personal-iot-serving-cert
+    controller-gen.kubebuilder.io/version: v0.10.0
+  name: mqttcontrollerconfigs.personal-iot.frup.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: personal-iot-webhook-service
+          namespace: personal-iot
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: personal-iot.frup.org
+  names:
+    kind: MQTTControllerConfig
+    listKind: MQTTControllerConfigList
+    plural: mqttcontrollerconfigs
+    singular: mqttcontrollerconfig
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: MQTTControllerConfig is the Schema for the mqttcontrollerconfigs API
+        properties:
+          MQTT_BROKER:
+            type: string
+          MQTT_CLIENT_ID:
+            type: string
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            type: object
+          status:
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: personal-iot/personal-iot-serving-cert
+    controller-gen.kubebuilder.io/version: v0.10.0
+  name: poweroutlets.personal-iot.frup.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: personal-iot-webhook-service
+          namespace: personal-iot
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: personal-iot.frup.org
+  names:
+    categories:
+    - all
+    - power
+    kind: Poweroutlet
+    listKind: PoweroutletList
+    plural: poweroutlets
+    shortNames:
+    - outlet
+    singular: poweroutlet
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Poweroutlet is the Schema for the poweroutlets API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PoweroutletSpec defines the desired state of Poweroutlet
+            properties:
+              mqttcommandtopik:
+                type: string
+              mqttstatustopik:
+                type: string
+              outletName:
+                type: string
+              switch:
+                default: "OFF"
+                description: The desired switch status.
+                enum:
+                - "ON"
+                - "OFF"
+                type: string
+            type: object
+          status:
+            description: PoweroutletStatus defines the observed state of Poweroutlet
+            properties:
+              consumption:
+                format: int32
+                type: integer
+              consumptionunit:
+                type: string
+              "on":
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: personal-iot/personal-iot-serving-cert
+    controller-gen.kubebuilder.io/version: v0.10.0
+  name: powerstrips.personal-iot.frup.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: personal-iot-webhook-service
+          namespace: personal-iot
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: personal-iot.frup.org
+  names:
+    categories:
+    - all
+    - power
+    kind: Powerstrip
+    listKind: PowerstripList
+    plural: powerstrips
+    shortNames:
+    - strip
+    singular: powerstrip
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Powerstrip is the Schema for the powerstrips API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PowerstripSpec defines the desired state of Powerstrip
+            properties:
+              location:
+                type: string
+              mqttstatetopik:
+                type: string
+              mqtttelemetrytopik:
+                type: string
+              poweroutlets:
+                description: / Poweroutlets to be part of this powerstrip
+                items:
+                  description: Poweroutlet is the Schema for the poweroutlets API
+                  properties:
+                    apiVersion:
+                      description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                      type: string
+                    kind:
+                      description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    metadata:
+                      type: object
+                    spec:
+                      description: PoweroutletSpec defines the desired state of Poweroutlet
+                      properties:
+                        mqttcommandtopik:
+                          type: string
+                        mqttstatustopik:
+                          type: string
+                        outletName:
+                          type: string
+                        switch:
+                          default: "OFF"
+                          description: The desired switch status.
+                          enum:
+                          - "ON"
+                          - "OFF"
+                          type: string
+                      type: object
+                    status:
+                      description: PoweroutletStatus defines the observed state of Poweroutlet
+                      properties:
+                        consumption:
+                          format: int32
+                          type: integer
+                        consumptionunit:
+                          type: string
+                        "on":
+                          type: string
+                      type: object
+                  type: object
+                type: array
+            required:
+            - location
+            type: object
+          status:
+            description: PowerstripStatus defines the observed state of Powerstrip
+            properties:
+              consumption:
+                format: int32
+                type: integer
+              consumptionunit:
+                type: string
+              location:
+                type: string
+              poweroutlets:
+                description: Poweroutlets that are currently part of this powerstrip
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: serviceaccount
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-controller-manager
+  namespace: personal-iot
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: leader-election-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: role
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-leader-election-role
+  namespace: personal-iot
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: personal-iot-manager-role
+rules:
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - locations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - locations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - locations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - poweroutlets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - poweroutlets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - poweroutlets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - powerstrips
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - powerstrips/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - personal-iot.frup.org
+  resources:
+  - powerstrips/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: metrics-reader
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: proxy-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-leader-election-rolebinding
+  namespace: personal-iot
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: personal-iot-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: personal-iot-controller-manager
+  namespace: personal-iot
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: manager-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: personal-iot-manager-role
+subjects:
+- kind: ServiceAccount
+  name: personal-iot-controller-manager
+  namespace: personal-iot
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: proxy-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: personal-iot-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: personal-iot-controller-manager
+  namespace: personal-iot
+---
+apiVersion: v1
+data:
+  controller_manager_config.yaml: |+
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    kind: ControllerManagerConfig
+    metadata:
+      labels:
+        app.kubernetes.io/name: controllermanagerconfig
+        app.kubernetes.io/instance: controller-manager-configuration
+        app.kubernetes.io/component: manager
+        app.kubernetes.io/created-by: controller-tutorial
+        app.kubernetes.io/part-of: controller-tutorial
+        app.kubernetes.io/managed-by: kustomize
+    MQTT_BROKER: tcp://192.168.0.70:1883
+    MQTT_CLIENT_ID: personalIOTController
+
+kind: ConfigMap
+metadata:
+  name: personal-iot-manager-config
+  namespace: personal-iot
+---
+apiVersion: v1
+data:
+  MQTT_PASS: aGl2ZW1x
+  MQTT_USER: YWRtaW4=
+kind: Secret
+metadata:
+  name: personal-iot-mqtt-broker-creds
+  namespace: personal-iot
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: controller-manager-metrics-service
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: controller-tutorial
+    control-plane: controller-manager
+  name: personal-iot-controller-manager-metrics-service
+  namespace: personal-iot
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: webhook-service
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-webhook-service
+  namespace: personal-iot
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/part-of: controller-tutorial
+    control-plane: controller-manager
+  name: personal-iot-controller-manager
+  namespace: personal-iot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - arm64
+                - ppc64le
+                - s390x
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - linux
+      containers:
+      - command:
+        - /dlv
+        - --listen=:2345
+        - --headless=true
+        - --api-version=2
+        - --accept-multiclient
+        - exec
+        - /manager
+        - --
+        envFrom:
+        - configMapRef:
+            name: personal-iot-manager-config
+        - secretRef:
+            name: personal-iot-mqtt-broker-creds
+        image: mgrotedev/personal-iot:v1alpha1
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: personal-iot-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: serving-cert
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-serving-cert
+  namespace: personal-iot
+spec:
+  dnsNames:
+  - personal-iot-webhook-service.personal-iot.svc
+  - personal-iot-webhook-service.personal-iot.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: personal-iot-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: selfsigned-issuer
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: issuer
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-selfsigned-issuer
+  namespace: personal-iot
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: personal-iot/personal-iot-serving-cert
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: mutating-webhook-configuration
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: mutatingwebhookconfiguration
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: personal-iot-webhook-service
+      namespace: personal-iot
+      path: /mutate-personal-iot-frup-org-v1alpha1-poweroutlet
+  failurePolicy: Fail
+  name: mpoweroutlet.kb.io
+  rules:
+  - apiGroups:
+    - personal-iot.frup.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - poweroutlets
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: personal-iot/personal-iot-serving-cert
+  labels:
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: controller-tutorial
+    app.kubernetes.io/instance: validating-webhook-configuration
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: validatingwebhookconfiguration
+    app.kubernetes.io/part-of: controller-tutorial
+  name: personal-iot-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: personal-iot-webhook-service
+      namespace: personal-iot
+      path: /validate-personal-iot-frup-org-v1alpha1-poweroutlet
+  failurePolicy: Fail
+  name: vpoweroutlet.kb.io
+  rules:
+  - apiGroups:
+    - personal-iot.frup.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - poweroutlets
+  sideEffects: None

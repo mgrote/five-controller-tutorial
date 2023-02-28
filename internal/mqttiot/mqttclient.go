@@ -8,7 +8,6 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"k8s.io/apimachinery/pkg/util/rand"
 
-	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
 	"github.com/mgrote/personal-iot/internal"
 )
 
@@ -162,16 +161,16 @@ func (p PahoMQTTSubscriber) Disconnect(waitMs uint) {
 	p.MQTTClient.Disconnect(waitMs)
 }
 
-func ClientOpts(mqttConfig personaliotv1alpha1.MQTTConfig) *mqtt.ClientOptions {
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(*mqttConfig.Broker)
-	opts.SetClientID(*mqttConfig.ClientID)
-	opts.SetUsername(*mqttConfig.UserName)
-	opts.SetPassword(*mqttConfig.Password)
-	opts.SetCleanSession(true)
-	opts.SetOrderMatters(true)
-	return opts
-}
+//func ClientOpts(mqttConfig personaliotv1alpha1.MQTTConfig) *mqtt.ClientOptions {
+//	opts := mqtt.NewClientOptions()
+//	opts.AddBroker(*mqttConfig.Broker)
+//	opts.SetClientID(*mqttConfig.ClientID)
+//	opts.SetUsername(*mqttConfig.UserName)
+//	opts.SetPassword(*mqttConfig.Password)
+//	opts.SetCleanSession(true)
+//	opts.SetOrderMatters(true)
+//	return opts
+//}
 
 func ClientOptsFromEnv() (*mqtt.ClientOptions, error) {
 	opts := mqtt.NewClientOptions()
