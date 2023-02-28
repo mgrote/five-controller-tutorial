@@ -74,7 +74,7 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	var configFile string
-	flag.StringVar(&configFile, "config", "./config/manager/controller_manager_config.yaml",
+	flag.StringVar(&configFile, "config", "controller_manager_config.yaml",
 		"The controller will load its initial configuration from this file. "+
 			"Omit this flag to use the default configuration values. "+
 			"Command-line flags override configuration from this file.")
@@ -103,7 +103,18 @@ func main() {
 		LeaderElectionID:       "aasdfasdf",
 		Port:                   9443,
 	}
-	//setupLog.WithValues("config", configFile).Info("found config")
+	setupLog.WithValues("config", configFile).Info("found config")
+
+	//mqttControllerConfig := &personaliotv1alpha1.MQTTControllerConfig{}
+	//if configFile != "" {
+	//	cfgFile := ctrl.ConfigFile().OfKind(mqttControllerConfig).AtPath(configFile)
+	//	if err = cfgFile.InjectScheme(scheme); err != nil {
+	//		setupLog.Error(err, "unable to load config file")
+	//	}
+	//	if _, err = cfgFile.Complete(); err != nil {
+	//		setupLog.Error(err, "unable to load the config file")
+	//	}
+	//}
 
 	//ctrlConfig := personaliotv1alpha1.MQTTControllerConfig{}
 	//if configFile != "" {
@@ -113,7 +124,9 @@ func main() {
 	//		os.Exit(1)
 	//	}
 	//}
-	//
+	//mqttConfig := mqttControllerConfig.MQTTConfig
+	//setupLog.WithValues("mqttConfig", mqttConfig).Info("got mqtt config")
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
