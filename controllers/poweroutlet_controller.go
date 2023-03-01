@@ -147,7 +147,7 @@ func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, p
 	// When subscribing the power outlet status topik, the first message delivers immediately the current state.
 	// The status change may come later, so we have to wait for the next messages.
 	var currentState string
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 4; i++ {
 		incoming := <-messageChannel
 		currentState = incoming.Msg
 		// TODO output improves the timing, think about a wait ;-).
