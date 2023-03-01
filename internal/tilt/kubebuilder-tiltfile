@@ -55,7 +55,7 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
     COPY --from=builder /go/bin/dlv /dlv
     USER 65532:65532
     EXPOSE 32345
-    CMD ["/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager", "--"]
+    CMD ["/dlv", "--listen=:32345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager", "--"]
     '''
 
     docker_build_with_restart(IMG, '.',
@@ -67,7 +67,5 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
         ]
     )
 
-    # wants https, strange
-    #k8s_resource('personal-iot-controller-manager', port_forwards=[2345])
 
 
