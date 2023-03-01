@@ -17,6 +17,9 @@ Dockerfile.cross
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# ignore secrets stored in .env files
+*.env
+
 # Kubernetes Generated files - skip generated files, except for vendored files
 
 !vendor/**/zz_generated.*
