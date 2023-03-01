@@ -26,13 +26,16 @@ COPY dlv dlv
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
 #RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+
+# Build with debug symbols.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -gcflags "-N -l" -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 #FROM gcr.io/distroless/static:nonroot
+
+# For debugging use a fully featured linux image.
 FROM ubuntu:jammy
-#RUN apt-get update && apt-get install -y dnsutils net-tools && rm -rf /var/lib/apt/lists/*
 WORKDIR /
 COPY --from=builder /workspace/dlv .
 COPY --from=builder /workspace/manager .

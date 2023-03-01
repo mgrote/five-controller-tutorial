@@ -9,5 +9,6 @@ metadata:
     app.kubernetes.io/created-by: controller-tutorial
   name: light-one
 spec:
+  outletName: "light-one"
   mqttstatustopik: "stat/gosund_p1_1_12FCA5/POWER1"
   mqttcommandtopik: "cmnd/gosund_p1_1_12FCA5/POWER1"

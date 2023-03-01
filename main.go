@@ -34,7 +34,6 @@ import (
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
 	"github.com/mgrote/personal-iot/controllers"
 	"github.com/mgrote/personal-iot/internal/mqttiot"
-
 	//+kubebuilder:scaffold:imports
 )
 
