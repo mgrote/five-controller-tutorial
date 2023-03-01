@@ -179,8 +179,9 @@ var _ = Describe("Power outlet controller", func() {
 			Expect(powerOutlet.Status.Switch).To(BeIdenticalTo(internal.PowerOnSignal))
 
 			By("Delete the created power outlet resource")
-			err = k8sClient.Delete(ctx, powerOutlet)
-			Expect(err).ToNot(HaveOccurred())
+			Eventually(func() error {
+				return k8sClient.Delete(ctx, powerOutlet)
+			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Object with finalizer is not deleted, but deletion timestamp is set")
 			Eventually(func() error {
@@ -209,6 +210,7 @@ var _ = Describe("Power outlet controller", func() {
 			Expect(err).To(Not(HaveOccurred()))
 
 			By("Object should be deleted after removing finalizer.")
+
 			Eventually(func() error {
 				return k8sClient.Get(ctx, powerOutletKey, powerOutlet)
 			}, time.Minute, time.Second).ShouldNot(Succeed())

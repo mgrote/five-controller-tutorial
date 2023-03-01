@@ -162,7 +162,7 @@ var _ = Describe("Power strip controller", func() {
 				return k8sClient.List(ctx, locationList, &client.ListOptions{Namespace: testName})
 			}, time.Minute, time.Second).Should(Succeed())
 
-			By("The power strip status should be set up")
+			By("The power strip status should be set up.")
 
 			Eventually(func() error {
 				return k8sClient.Get(ctx, powerStripKey, powerStrip)
@@ -170,6 +170,92 @@ var _ = Describe("Power strip controller", func() {
 			Expect(powerStrip.Status.Location).To(BeIdenticalTo(locationName))
 			Expect(len(powerStrip.Status.Outlets)).To(BeIdenticalTo(3))
 			Expect(powerStrip.Status.Outlets).To(ContainElements("light-one", "light-two", "light-three"))
+
+			By("Delete the power strip resource, expect a deletion timestamp.")
+
+			Eventually(func() error {
+				return k8sClient.Delete(ctx, powerStrip)
+			}, time.Minute, time.Second).Should(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, powerStripKey, powerStrip)
+			}, time.Minute, time.Second).Should(Succeed())
+			Expect(powerStrip.ObjectMeta.DeletionTimestamp).To(Not(BeNil()))
+
+			_, err = powerStripController.Reconcile(ctx, reconcile.Request{
+				NamespacedName: powerStripKey,
+			})
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Expect deletion timestamp on every outlet after deletion timestamp")
+
+			Eventually(func() error {
+				return k8sClient.List(ctx, powerOutletList, &client.ListOptions{Namespace: testName})
+			}, time.Minute, time.Second).Should(Succeed())
+			// Keep in mind, created outlets are not reconciled by PoweroutletReconciler and have as a result no
+			// finalizer and where deleted directly, so we expect no more outlets.
+			Expect(len(powerOutletList.Items)).To(BeIdenticalTo(0))
+
+			// If there was a finalizer on outlets you would test like this.
+
+			//Expect(len(powerOutletList.Items)).To(BeIdenticalTo(3))
+			//for _, outlet := range powerOutletList.Items {
+			//	Expect(outlet.ObjectMeta.DeletionTimestamp).To(Not(BeNil()))
+			//}
+			//
+			//By("Reconcile outlets until all are deleted")
+			//
+			//var outletPublisher mqttiot.MQTTPublisher
+			//var outletSubscriber mqttiot.MQTTSubscriber
+			//if realClient {
+			//	mqttClientOpts, err := mqttiot.ClientOptsFromEnv()
+			//	Expect(err).ShouldNot(HaveOccurred())
+			//	subscriber = mqttiot.NewPahoMQTTSubscriber(mqttClientOpts)
+			//	outletPublisher = mqttiot.NewPahoMQTTPublisher(mqttClientOpts)
+			//} else {
+			//	outletPublisher = &mqttiot.FakeMQTTPublisher{
+			//		ConnectError: nil,
+			//		PublishError: nil,
+			//	}
+			//	outletSubscriber = &mqttiot.FakeMQTTSubscriber{
+			//		ConnectError:     nil,
+			//		SubscribeError:   nil,
+			//		UnsubscribeError: nil,
+			//		ExpectedMessages: []mqttiot.MQTTMessage{{
+			//			Topik:     "powerOutlet.Spec.MQTTStatusTopik",
+			//			Msg:       internal.PowerOffSignal,
+			//			Duplicate: false,
+			//		}},
+			//	}
+			//}
+			//
+			//powerOutletController := &PoweroutletReconciler{
+			//	Client:         k8sClient,
+			//	Scheme:         k8sClient.Scheme(),
+			//	MQTTPublisher:  outletPublisher,
+			//	MQTTSubscriber: outletSubscriber,
+			//}
+			//
+			//for len(powerOutletList.Items) == 0 {
+			//	for _, outlet := range powerOutletList.Items {
+			//		_, err = powerOutletController.Reconcile(ctx, reconcile.Request{
+			//			NamespacedName: client.ObjectKeyFromObject(&outlet),
+			//		})
+			//	}
+			//	Eventually(func() error {
+			//		return k8sClient.List(ctx, powerOutletList, &client.ListOptions{Namespace: testName})
+			//	}, time.Minute, time.Second).Should(Succeed())
+			//}
+
+			By("After outlets are deleted, the power strip resource should disappear.")
+			_, err = powerStripController.Reconcile(ctx, reconcile.Request{
+				NamespacedName: powerStripKey,
+			})
+			Expect(err).To(Not(HaveOccurred()))
+
+			Eventually(func() error {
+				return k8sClient.Get(ctx, typedNs, powerStrip)
+			}, time.Minute, time.Second).ShouldNot(Succeed())
+
 		})
 
 	})

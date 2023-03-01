@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
@@ -58,6 +59,19 @@ func (r *PowerstripReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// Check if deletion timestamp is added, switch off power outlet and delete finalizer.
+	if !powerStrip.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, powerStrip)
+	}
+
+	// Check if finalizer should be added or applied.
+	if !controllerutil.ContainsFinalizer(powerStrip, personaliotv1alpha1.PowerStripFinalizer) {
+		controllerutil.AddFinalizer(powerStrip, personaliotv1alpha1.PowerStripFinalizer)
+		if err := r.Update(ctx, powerStrip); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	location, err := r.createLocationIfNotExists(ctx, powerStrip)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -80,6 +94,41 @@ func (r *PowerstripReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
+	return ctrl.Result{}, nil
+}
+
+func (r *PowerstripReconciler) reconcileDelete(ctx context.Context, powerStrip *personaliotv1alpha1.Powerstrip) (ctrl.Result, error) {
+	outlets, err := r.getOrForgetOutlets(ctx, powerStrip)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// All outlets are deleted, it's safe to delete the power strip.
+	if len(outlets) == 0 {
+		controllerutil.RemoveFinalizer(powerStrip, personaliotv1alpha1.PowerOutletFinalizer)
+		if err = r.Update(ctx, powerStrip); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// Check if existing outlets are already deleted or need to be deleted.
+	var existingOutletNames []string
+	for _, outlet := range outlets {
+		existingOutletNames = append(existingOutletNames, outlet.Name)
+
+		if outlet.ObjectMeta.DeletionTimestamp != nil {
+			continue
+		}
+		if err = r.Delete(ctx, outlet); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	// update existing outlets in status
+	powerStrip.Status.Outlets = existingOutletNames
+	if err := r.Status().Update(ctx, powerStrip); err != nil {
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -124,6 +173,21 @@ func (r *PowerstripReconciler) getOrCreateOutlets(ctx context.Context, powerStri
 			}
 		}
 		existingOutlets = append(existingOutlets, outlet)
+	}
+	return existingOutlets, nil
+}
+
+func (r *PowerstripReconciler) getOrForgetOutlets(ctx context.Context, powerStrip *personaliotv1alpha1.Powerstrip) ([]*personaliotv1alpha1.Poweroutlet, error) {
+	desiredOutlets := powerStrip.Spec.Outlets
+	var existingOutlets []*personaliotv1alpha1.Poweroutlet
+	for _, outlet := range desiredOutlets {
+		err := r.Get(ctx, client.ObjectKey{Namespace: powerStrip.Namespace, Name: outlet.Spec.OutletName}, outlet)
+		if client.IgnoreNotFound(err) != nil {
+			return nil, err
+		}
+		if err == nil {
+			existingOutlets = append(existingOutlets, outlet)
+		}
 	}
 	return existingOutlets, nil
 }
