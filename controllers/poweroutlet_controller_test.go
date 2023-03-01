@@ -61,7 +61,6 @@ var _ = Describe("Power outlet controller", func() {
 			Expect(errors.IsNotFound(err)).To(BeTrue())
 
 			powerOutletList := &personaliotv1alpha1.PoweroutletList{}
-			//err = k8sClient.List(ctx, powerOutletList, &client.ListOptions{Namespace: testName})
 			Expect(k8sClient.List(ctx, powerOutletList, &client.ListOptions{Namespace: testName})).Should(Succeed())
 			Expect(len(powerOutletList.Items)).To(BeIdenticalTo(0))
 
@@ -86,9 +85,6 @@ var _ = Describe("Power outlet controller", func() {
 			powerOutletKey := client.ObjectKeyFromObject(powerOutlet)
 			err = k8sClient.Get(ctx, powerOutletKey, powerOutlet)
 			Expect(err).ShouldNot(HaveOccurred())
-
-			// TODO talk:
-			// Next test will fail w/o defaulting
 
 			By("A newly created power outlet switch status is not set.")
 			Expect(powerOutlet.Status.Switch).To(BeIdenticalTo(""))
