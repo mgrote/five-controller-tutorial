@@ -106,7 +106,7 @@ var _ = Describe("Power outlet controller", func() {
 			})
 			Expect(err).To(Not(HaveOccurred()))
 
-			By("reconciled power outlet should have status switch set to 'off'")
+			By("reconciled power outlet should have status switch set to 'OFF'")
 
 			Eventually(func() error {
 				return k8sClient.Get(ctx, powerOutletKey, powerOutlet)
