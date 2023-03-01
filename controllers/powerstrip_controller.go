@@ -33,7 +33,7 @@ import (
 type PowerstripReconciler struct {
 	client.Client
 	Scheme         *runtime.Scheme
-	mqttSubscriber mqttiot.MQTTSubscriber
+	MQTTSubscriber mqttiot.MQTTSubscriber
 }
 
 //+kubebuilder:rbac:groups=personal-iot.frup.org,resources=powerstrips,verbs=get;list;watch;create;update;patch;delete
@@ -85,16 +85,16 @@ func (r *PowerstripReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 func (r *PowerstripReconciler) checkOutletReachability(outlets []*personaliotv1alpha1.Poweroutlet) ([]string, error) {
 
-	if err := r.mqttSubscriber.Connect(); err != nil {
+	if err := r.MQTTSubscriber.Connect(); err != nil {
 		return nil, err
 	}
 
-	defer r.mqttSubscriber.Disconnect(500)
+	defer r.MQTTSubscriber.Disconnect(500)
 
 	var existingOutletNames []string
 	for _, outlet := range outlets {
 		messageChannel := make(chan mqttiot.MQTTMessage)
-		if err := r.mqttSubscriber.Subscribe(outlet.Spec.MQTTStatusTopik, 1, messageChannel); err != nil {
+		if err := r.MQTTSubscriber.Subscribe(outlet.Spec.MQTTStatusTopik, 1, messageChannel); err != nil {
 			return nil, err
 		}
 

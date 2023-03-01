@@ -34,8 +34,8 @@ import (
 type PoweroutletReconciler struct {
 	client.Client
 	Scheme         *runtime.Scheme
-	mqttSubscriber mqttiot.MQTTSubscriber
-	mqttPublisher  mqttiot.MQTTPublisher
+	MQTTSubscriber mqttiot.MQTTSubscriber
+	MQTTPublisher  mqttiot.MQTTPublisher
 }
 
 //+kubebuilder:rbac:groups=personal-iot.frup.org,resources=poweroutlets,verbs=get;list;watch;create;update;patch;delete
@@ -81,25 +81,25 @@ func (r *PoweroutletReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (*string, error) {
 
-	if err := r.mqttPublisher.Connect(); err != nil {
+	if err := r.MQTTPublisher.Connect(); err != nil {
 		return nil, err
 	}
 
-	defer r.mqttSubscriber.Disconnect(500)
+	defer r.MQTTSubscriber.Disconnect(500)
 
 	// request desired state from outlet
-	if err := r.mqttPublisher.Publish(powerOutlet.Spec.MQTTCommandTopik, powerOutlet.Spec.Switch, 1, true); err != nil {
+	if err := r.MQTTPublisher.Publish(powerOutlet.Spec.MQTTCommandTopik, powerOutlet.Spec.Switch, 1, true); err != nil {
 		return nil, err
 	}
-	r.mqttPublisher.Disconnect(500)
+	r.MQTTPublisher.Disconnect(500)
 
 	// check if state was reached, keep in mind: there are some timing problems
-	if err := r.mqttSubscriber.Connect(); err != nil {
+	if err := r.MQTTSubscriber.Connect(); err != nil {
 		return nil, err
 	}
 
 	messageChannel := make(chan mqttiot.MQTTMessage)
-	if err := r.mqttSubscriber.Subscribe(powerOutlet.Spec.MQTTStatusTopik, 1, messageChannel); err != nil {
+	if err := r.MQTTSubscriber.Subscribe(powerOutlet.Spec.MQTTStatusTopik, 1, messageChannel); err != nil {
 		return nil, err
 	}
 
@@ -107,6 +107,9 @@ func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, p
 	for i := 0; i < 2; i++ {
 		incoming := <-messageChannel
 		currentState = incoming.Msg
+		if currentState == powerOutlet.Spec.Switch {
+			break
+		}
 	}
 
 	close(messageChannel)

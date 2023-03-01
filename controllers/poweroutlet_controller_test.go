@@ -15,6 +15,7 @@ import (
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
 	"github.com/mgrote/personal-iot/internal"
+	"github.com/mgrote/personal-iot/internal/mqttiot"
 )
 
 var _ = Describe("Power outlet controller", func() {
@@ -95,10 +96,29 @@ var _ = Describe("Power outlet controller", func() {
 
 			By("Reconciling is expected to run w/o error and the status field switch is set.")
 
-			Expect(err).ShouldNot(HaveOccurred())
+			var publisher mqttiot.MQTTPublisher
+			var subscriber mqttiot.MQTTSubscriber
+
+			publisher = &mqttiot.FakeMQTTPublisher{
+				ConnectError: nil,
+				PublishError: nil,
+			}
+			subscriber = &mqttiot.FakeMQTTSubscriber{
+				ConnectError:     nil,
+				SubscribeError:   nil,
+				UnsubscribeError: nil,
+				ExpectedMessages: []mqttiot.MQTTMessage{{
+					Topik:     powerOutlet.Spec.MQTTStatusTopik,
+					Msg:       internal.PowerOffSignal,
+					Duplicate: false,
+				}},
+			}
+
 			powerOutletController := &PoweroutletReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				Client:         k8sClient,
+				Scheme:         k8sClient.Scheme(),
+				MQTTPublisher:  publisher,
+				MQTTSubscriber: subscriber,
 			}
 
 			_, err = powerOutletController.Reconcile(ctx, reconcile.Request{
@@ -122,6 +142,22 @@ var _ = Describe("Power outlet controller", func() {
 			}, time.Minute, time.Second).Should(Succeed())
 			Expect(powerOutlet.Spec.Switch).To(BeIdenticalTo(internal.PowerOnSignal))
 			Expect(powerOutlet.Status.Switch).To(BeIdenticalTo(internal.PowerOffSignal))
+
+			subscriber = &mqttiot.FakeMQTTSubscriber{
+				ConnectError:     nil,
+				SubscribeError:   nil,
+				UnsubscribeError: nil,
+				ExpectedMessages: []mqttiot.MQTTMessage{{
+					Topik:     powerOutlet.Spec.MQTTStatusTopik,
+					Msg:       internal.PowerOffSignal,
+					Duplicate: false,
+				}, {
+					Topik:     powerOutlet.Spec.MQTTStatusTopik,
+					Msg:       internal.PowerOnSignal,
+					Duplicate: false,
+				}},
+			}
+			powerOutletController.MQTTSubscriber = subscriber
 
 			_, err = powerOutletController.Reconcile(ctx, reconcile.Request{
 				NamespacedName: powerOutletKey,

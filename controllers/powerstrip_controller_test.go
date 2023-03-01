@@ -16,6 +16,7 @@ import (
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
 	"github.com/mgrote/personal-iot/internal"
+	"github.com/mgrote/personal-iot/internal/mqttiot"
 )
 
 var _ = Describe("Power strip controller", func() {
@@ -105,9 +106,23 @@ var _ = Describe("Power strip controller", func() {
 
 			Expect(err).ShouldNot(HaveOccurred())
 
+			var subscriber mqttiot.MQTTSubscriber
+
+			subscriber = &mqttiot.FakeMQTTSubscriber{
+				ConnectError:     nil,
+				SubscribeError:   nil,
+				UnsubscribeError: nil,
+				ExpectedMessages: []mqttiot.MQTTMessage{{
+					Topik:     "someIgnoredTopik",
+					Msg:       internal.PowerOffSignal,
+					Duplicate: false,
+				}},
+			}
+
 			powerStripController := &PowerstripReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				Client:         k8sClient,
+				Scheme:         k8sClient.Scheme(),
+				MQTTSubscriber: subscriber,
 			}
 
 			_, err = powerStripController.Reconcile(ctx, reconcile.Request{

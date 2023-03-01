@@ -3,7 +3,6 @@ package mqttiot
 import (
 	"fmt"
 	"os"
-	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
@@ -62,9 +61,11 @@ func (f *FakeMQTTSubscriber) Subscribe(_ string, _ byte, messages chan<- MQTTMes
 	if f.SubscribeError != nil {
 		return f.SubscribeError
 	}
-	for _, message := range f.ExpectedMessages {
-		messages <- message
-	}
+	go func() {
+		for _, message := range f.ExpectedMessages {
+			messages <- message
+		}
+	}()
 	return nil
 }
 
@@ -74,83 +75,6 @@ func (f *FakeMQTTSubscriber) Unsubscribe(_ string) error {
 
 func (f *FakeMQTTSubscriber) Disconnect(waitMs uint) {
 	// nop
-}
-
-type PahoMQTTPublisher struct {
-	MQTTClientOpts *mqtt.ClientOptions
-	MQTTClient     mqtt.Client
-}
-
-func NewPahoMQTTPublisher(clientOpts *mqtt.ClientOptions) MQTTPublisher {
-	return &PahoMQTTPublisher{
-		MQTTClientOpts: clientOpts,
-		MQTTClient:     mqtt.NewClient(clientOpts),
-	}
-}
-
-func (p *PahoMQTTPublisher) Connect() error {
-	if token := p.MQTTClient.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("client could not connect MQTT broker %s, %w", p.MQTTClientOpts.Servers, token.Error())
-	}
-	return nil
-}
-
-func (p *PahoMQTTPublisher) Publish(topik string, message string, qos byte, retained bool) error {
-	token := p.MQTTClient.Publish(topik, qos, retained, message)
-	if !token.WaitTimeout(time.Second * 5) {
-		return fmt.Errorf("client could not publish to MQTT topik %s", topik)
-	}
-	return nil
-}
-
-func (p *PahoMQTTPublisher) Disconnect(waitMs uint) {
-	p.MQTTClient.Disconnect(waitMs)
-}
-
-type PahoMQTTSubscriber struct {
-	MQTTClientOpts *mqtt.ClientOptions
-	MQTTClient     mqtt.Client
-}
-
-func NewPahoMQTTSubscriber(clientOpts *mqtt.ClientOptions) MQTTSubscriber {
-	return &PahoMQTTSubscriber{
-		MQTTClientOpts: clientOpts,
-		MQTTClient:     mqtt.NewClient(clientOpts),
-	}
-}
-
-func (p PahoMQTTSubscriber) Connect() error {
-	if token := p.MQTTClient.Connect(); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("client could not connect MQTT broker %s, %w", p.MQTTClientOpts.Servers, token.Error())
-	}
-	return nil
-}
-
-func (p PahoMQTTSubscriber) Subscribe(topik string, qos byte, messages chan<- MQTTMessage) error {
-	messageHandler := func(client mqtt.Client, msg mqtt.Message) {
-		messages <- MQTTMessage{
-			Topik:     msg.Topic(),
-			Msg:       string(msg.Payload()),
-			Duplicate: msg.Duplicate(),
-		}
-	}
-
-	if token := p.MQTTClient.Subscribe(topik, qos, messageHandler); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("subscriber could not subscribe MQTT topik %s", topik)
-	}
-	return nil
-}
-
-func (p PahoMQTTSubscriber) Unsubscribe(topik string) error {
-	token := p.MQTTClient.Unsubscribe(topik)
-	if token.Error() != nil {
-		return token.Error()
-	}
-	return nil
-}
-
-func (p PahoMQTTSubscriber) Disconnect(waitMs uint) {
-	p.MQTTClient.Disconnect(waitMs)
 }
 
 func ClientOpts(mqttConfig personaliotv1alpha1.MQTTConfig) *mqtt.ClientOptions {
