@@ -181,8 +181,37 @@ var _ = Describe("Power outlet controller", func() {
 			By("Delete the created power outlet resource")
 			err = k8sClient.Delete(ctx, powerOutlet)
 			Expect(err).ToNot(HaveOccurred())
-			err = k8sClient.Get(ctx, typedNs, powerOutlet)
-			Expect(errors.IsNotFound(err)).To(BeTrue())
+
+			By("Object with finalizer is not deleted, but deletion timestamp is set")
+			Eventually(func() error {
+				return k8sClient.Get(ctx, powerOutletKey, powerOutlet)
+			}, time.Minute, time.Second).Should(Succeed())
+			Expect(powerOutlet.ObjectMeta.DeletionTimestamp).To(Not(BeNil()))
+
+			By("Reconcile object to remove finalizer")
+			if !realClient {
+				subscriber = &mqttiot.FakeMQTTSubscriber{
+					ConnectError:     nil,
+					SubscribeError:   nil,
+					UnsubscribeError: nil,
+					ExpectedMessages: []mqttiot.MQTTMessage{{
+						Topik:     powerOutlet.Spec.MQTTStatusTopik,
+						Msg:       internal.PowerOffSignal,
+						Duplicate: false,
+					}},
+				}
+				powerOutletController.MQTTSubscriber = subscriber
+			}
+
+			_, err = powerOutletController.Reconcile(ctx, reconcile.Request{
+				NamespacedName: powerOutletKey,
+			})
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Object should be deleted after removing finalizer.")
+			Eventually(func() error {
+				return k8sClient.Get(ctx, powerOutletKey, powerOutlet)
+			}, time.Minute, time.Second).ShouldNot(Succeed())
 		})
 	})
 })

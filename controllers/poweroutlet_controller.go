@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
@@ -60,11 +61,26 @@ func (r *PoweroutletReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	logger.WithValues("switch", powerOutlet.Spec.Switch).Info("found power outlet")
-	// nothing to do, leave
+
+	// Check if deletion timestamp is added, switch off power outlet and delete finalizer.
+	if !powerOutlet.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, powerOutlet)
+	}
+
+	// Check if finalizer should be added or applied.
+	if !controllerutil.ContainsFinalizer(powerOutlet, personaliotv1alpha1.PowerOutletFinalizer) {
+		controllerutil.AddFinalizer(powerOutlet, personaliotv1alpha1.PowerOutletFinalizer)
+		if err := r.Update(ctx, powerOutlet); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	// if nothing is to do, leave
 	if powerOutlet.Spec.Switch == powerOutlet.Status.Switch {
 		logger.Info("desired switch state reached, nothing else to do", "", powerOutlet.Spec.Switch, "state", powerOutlet.Spec.Switch)
 		return ctrl.Result{}, nil
 	}
+
 	currentState, err := r.reconcilePowerOutletState(ctx, powerOutlet)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -72,11 +88,37 @@ func (r *PoweroutletReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	logger.Info("reached state", "current state", currentState)
 	powerOutlet.Status.Switch = *currentState
 
-	if err := r.Status().Update(ctx, powerOutlet); err != nil {
+	if err = r.Status().Update(ctx, powerOutlet); err != nil {
 		logger.Error(err, "update PowerOutlet status")
 		return ctrl.Result{}, err
 	}
 
+	return ctrl.Result{}, nil
+}
+
+//func (r *PoweroutletReconciler) reconcileState(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (ctrl.Result, error)
+
+func (r *PoweroutletReconciler) reconcileDelete(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
+	if powerOutlet.Status.Switch == internal.PowerOnSignal {
+		powerOutlet.Spec.Switch = internal.PowerOffSignal
+
+		currentState, err := r.reconcilePowerOutletState(ctx, powerOutlet)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if *currentState != internal.PowerOffSignal {
+			return ctrl.Result{}, fmt.Errorf("finalize can not switch off device %s", powerOutlet.Name)
+		}
+
+		powerOutlet.Status.Switch = *currentState
+		if err = r.Status().Update(ctx, powerOutlet); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	controllerutil.RemoveFinalizer(powerOutlet, personaliotv1alpha1.PowerOutletFinalizer)
+	if err := r.Update(ctx, powerOutlet); err != nil {
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 

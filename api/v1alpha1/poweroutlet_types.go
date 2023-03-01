@@ -20,6 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	PowerOutletFinalizer = "finalizer.poweroutlets.personal-iot.frup.org"
+)
+
 // PoweroutletSpec defines the desired state of Poweroutlet
 type PoweroutletSpec struct {
 	// The desired switch status.
