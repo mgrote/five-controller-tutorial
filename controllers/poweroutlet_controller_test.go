@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -21,6 +22,8 @@ var _ = Describe("Power outlet controller", func() {
 	Context("Power outlet controller resource test", func() {
 
 		testName := "test-outlet-controller-test" + rand.String(4)
+
+		ctx := context.Background()
 
 		ns := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -50,7 +53,7 @@ var _ = Describe("Power outlet controller", func() {
 			// TODO lecture ---> remove Switch to see defaulting
 			powerOutlet := &personaliotv1alpha1.Poweroutlet{
 				Spec: personaliotv1alpha1.PoweroutletSpec{
-					Switch:           internal.PowerOnSignal,
+					Switch:           internal.PowerOffSignal,
 					OutletName:       "light-one",
 					MQTTStatusTopik:  "stat/gosund_p1_1_12FCA5/POWER1",
 					MQTTCommandTopik: "cmnd/gosund_p1_1_12FCA5/POWER1",
