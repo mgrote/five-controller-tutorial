@@ -40,7 +40,12 @@ spec:
             description: LocationSpec defines the desired state of Location
             properties:
               mood:
+                default: DARK
                 description: The mood the location should be in.
+                enum:
+                - DARK
+                - BRIGHT
+                - DONTKNOW
                 type: string
             type: object
           status:

@@ -19,9 +19,11 @@ package controllers
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
@@ -47,7 +49,46 @@ type LocationReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.1/pkg/reconcile
 func (r *LocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithValues("LocationReconciler", req.NamespacedName)
+
+	location := &personaliotv1alpha1.Location{}
+	if err := r.Get(ctx, req.NamespacedName, location); err != nil {
+		logger.Error(err, "unable to fetch power outlet")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Check if deletion timestamp is added, switch off power outlet and delete finalizer.
+	if !location.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileDelete(ctx, location)
+	}
+
+	// Check if finalizer should be added or applied.
+	if !controllerutil.ContainsFinalizer(location, personaliotv1alpha1.LocationFinalizer) {
+		controllerutil.AddFinalizer(location, personaliotv1alpha1.LocationFinalizer)
+		if err := r.Update(ctx, location); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	powerStripList := &personaliotv1alpha1.PowerstripList{}
+	stripListOpts := &client.ListOptions{
+		Namespace:     location.Namespace,
+		FieldSelector: fields.SelectorFromSet(fields.Set{"spec.location": location.Name}),
+	}
+	if err := r.List(ctx, powerStripList, stripListOpts); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var outletList []*personaliotv1alpha1.Poweroutlet
+	for _, strip := range powerStripList.Items {
+		for _, outlet := range strip.Spec.Outlets {
+			outletList = append(outletList, outlet)
+		}
+	}
+
+	// Reconcile DARK -> all off
+	// Reconcile BRIGHT -> all on
+	// Reconcile DONTKNOW -> every second will be on ( count % 2 == 0 )
 
 	// TODO: check mood if power strips are with this location available
 
@@ -62,4 +103,8 @@ func (r *LocationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&personaliotv1alpha1.Location{}).
 		Complete(r)
+}
+
+func (r *LocationReconciler) reconcileDelete(ctx context.Context, location *personaliotv1alpha1.Location) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }

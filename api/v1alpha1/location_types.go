@@ -20,12 +20,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	LocationFinalizer = "finalizer.locations.personal-iot.frup.org"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // LocationSpec defines the desired state of Location
 type LocationSpec struct {
 	// The mood the location should be in.
+	// +kubebuilder:default:=DARK
+	// +kubebuilder:validation:Enum:=DARK;BRIGHT;DONTKNOW
 	Mood string `json:"mood,omitempty"`
 }
 

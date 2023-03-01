@@ -51,6 +51,16 @@ var _ = Describe("Location integration", func() {
 			locationList := personaliotv1alpha1.LocationList{}
 			Expect(k8sClient.List(ctx, &locationList, &client.ListOptions{Namespace: testName})).Should(Succeed())
 
+			//powerStrip := &personaliotv1alpha1.Powerstrip{}
+			//powerStrip.Name = "light-strip"
+			//powerStrip.Namespace = testName
+			//powerStrip.Spec.Outlets = outlets
+			//powerStrip.Spec.LocationName = locationName
+			//powerStrip.Spec.MQTTStateTopik = "tele/gosund_p1_1_12FCA5/STATE"
+			//powerStrip.Spec.MQTTTelemetryTopik = "tele/gosund_p1_1_12FCA5/SENSOR"
+			//err = k8sClient.Create(ctx, powerStrip)
+			//Expect(err).ToNot(HaveOccurred())
+
 		})
 	})
 })
