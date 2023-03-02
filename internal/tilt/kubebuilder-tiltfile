@@ -38,14 +38,13 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
 
     k8s_yaml(yaml())
 
-    deps = ['controllers', 'main.go']
+    deps = ['controllers', 'main.go', 'internal']
     deps.append('api')
 
     local_resource('Watch&Compile', generate() + binary(), deps=deps, ignore=['*/*/zz_generated.deepcopy.go'])
 
     # local_resource('Sample YAML', 'kubectl apply -f ./config/samples', deps=["./config/samples"], resource_deps=[DIRNAME + "-controller-manager"])
 
-                       # gcr.io/distroless/static:nonroot
     DOCKERFILE = '''FROM golang:1.19 as builder
     RUN go install github.com/go-delve/delve/cmd/dlv@latest
     # FROM gcr.io/distroless/base:debug
