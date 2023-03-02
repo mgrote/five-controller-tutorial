@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
+	"github.com/mgrote/personal-iot/internal"
 )
 
 // LocationReconciler reconciles a Location object
@@ -70,6 +72,11 @@ func (r *LocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
+	// No mood is set, nothing to do.
+	if location.Spec.Mood == "" {
+		return ctrl.Result{}, nil
+	}
+
 	powerStripList := &personaliotv1alpha1.PowerstripList{}
 	stripListOpts := &client.ListOptions{
 		Namespace:     location.Namespace,
@@ -85,16 +92,61 @@ func (r *LocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			outletList = append(outletList, outlet)
 		}
 	}
+	if len(outletList) == 0 {
+		return ctrl.Result{}, nil
+	}
 
-	// Reconcile DARK -> all off
-	// Reconcile BRIGHT -> all on
-	// Reconcile DONTKNOW -> every second will be on ( count % 2 == 0 )
+	switch location.Spec.Mood {
+	case personaliotv1alpha1.LocationMoodDark:
+		return r.reconcileDark(ctx, outletList)
+	case personaliotv1alpha1.LocationMoodBright:
+		return r.reconcileBright(ctx, outletList)
+	case personaliotv1alpha1.LocationMoodDontKnow:
+		return r.reconcileDontKnow(ctx, outletList)
+	}
 
-	// TODO: check mood if power strips are with this location available
+	return ctrl.Result{}, fmt.Errorf("location mood %s not recognised", location.Spec.Mood)
+}
 
-	// TODO: bild in the following error ---> location controller tries to set up the mood directly through mqtt,
-	//  but does not set the switch in the custom power switch resource, so the power switch controller roles back.
+func (r *LocationReconciler) reconcileDark(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
+	for _, outlet := range outlets {
+		if outlet.Spec.Switch == internal.PowerOnSignal {
+			outlet.Spec.Switch = internal.PowerOffSignal
+			if err := r.Update(ctx, outlet); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+	return ctrl.Result{}, nil
+}
 
+func (r *LocationReconciler) reconcileBright(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
+	for _, outlet := range outlets {
+		if outlet.Spec.Switch == internal.PowerOffSignal {
+			outlet.Spec.Switch = internal.PowerOnSignal
+			if err := r.Update(ctx, outlet); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *LocationReconciler) reconcileDontKnow(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
+	for _, outlet := range outlets {
+		if outlet.Spec.Switch == internal.PowerOffSignal {
+			outlet.Spec.Switch = internal.PowerOnSignal
+			if err := r.Update(ctx, outlet); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		if outlet.Spec.Switch == internal.PowerOnSignal {
+			outlet.Spec.Switch = internal.PowerOffSignal
+			if err := r.Update(ctx, outlet); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
 	return ctrl.Result{}, nil
 }
 

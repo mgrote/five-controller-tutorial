@@ -21,7 +21,10 @@ import (
 )
 
 const (
-	LocationFinalizer = "finalizer.locations.personal-iot.frup.org"
+	LocationFinalizer    = "finalizer.locations.personal-iot.frup.org"
+	LocationMoodDark     = "DARK"
+	LocationMoodBright   = "BRIGHT"
+	LocationMoodDontKnow = "DONTKNOW"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
