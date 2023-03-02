@@ -55,7 +55,7 @@ func (r *PowerstripReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	powerStrip := &personaliotv1alpha1.Powerstrip{}
 	if err := r.Get(ctx, req.NamespacedName, powerStrip); err != nil {
-		logger.Error(err, "unable to fetch power outlet")
+		logger.Error(err, "unable to fetch power strip")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 

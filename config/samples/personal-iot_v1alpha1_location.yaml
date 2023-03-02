@@ -7,6 +7,6 @@ metadata:
     app.kubernetes.io/part-of: controller-tutorial
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: controller-tutorial
-  name: location-sample
+  name: tutorial-room
 spec:
-  # TODO(user): Add fields here
+  mood: DARK
