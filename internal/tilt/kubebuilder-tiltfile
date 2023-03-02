@@ -45,22 +45,17 @@ def kubebuilder(IMG='controller:latest', CONTROLLERGEN='crd rbac:roleName=manage
 
     # local_resource('Sample YAML', 'kubectl apply -f ./config/samples', deps=["./config/samples"], resource_deps=[DIRNAME + "-controller-manager"])
 
-                       # gcr.io/distroless/static:nonroot
-    DOCKERFILE = '''FROM golang:1.19 as builder
-    RUN go install github.com/go-delve/delve/cmd/dlv@latest
-    # FROM gcr.io/distroless/base:debug
-    FROM ubuntu:jammy
+    # DOCKERFILE = '''FROM  gcr.io/distroless/static:nonroot  --> is not working, tilt needs a full featured linux image
+    DOCKERFILE = '''FROM ubuntu:jammy
     WORKDIR /
     COPY ./tilt_bin/manager /manager
-    COPY --from=builder /go/bin/dlv /dlv
     USER 65532:65532
-    EXPOSE 32345
-    CMD ["/dlv", "--listen=:32345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager", "--"]
+    CMD ["/manager"]
     '''
 
     docker_build_with_restart(IMG, '.',
         dockerfile_contents=DOCKERFILE,
-        entrypoint='/dlv --listen=:32345 --headless=true --api-version=2 --accept-multiclient exec /manager',
+        entrypoint='/manager',
         only=['./tilt_bin/manager'],
         live_update=[
               sync('./tilt_bin/manager', '/manager'),
