@@ -41,7 +41,7 @@ type LocationSpec struct {
 // LocationStatus defines the observed state of Location
 type LocationStatus struct {
 	// The mood the location currently is.
-	Mood            string `json:"mood"`
+	Mood            string `json:"mood,omitempty"`
 	Consumption     int32  `json:"consumption,omitempty"`
 	ConsumptionUnit string `json:"consumptionunit,omitempty"`
 }

@@ -7,6 +7,24 @@ metadata:
     app.kubernetes.io/part-of: controller-tutorial
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: controller-tutorial
-  name: powerstrip-sample
+  name: light-strip
 spec:
-  # TODO(user): Add fields here
+  location: tutorial-room
+  poweroutlets:
+  - spec:
+      switch: OFF
+      outletname: light-one
+      mqttstatustopik: stat/gosund_p1_1_12FCA5/POWER1
+      mqttcommandtopik: cmnd/gosund_p1_1_12FCA5/POWER1
+  - spec:
+      switch: OFF
+      outletname: light-two
+      mqttstatustopik: stat/gosund_p1_1_12FCA5/POWER2
+      mqttcommandtopik: cmnd/gosund_p1_1_12FCA5/POWER2
+  - spec:
+      switch: OFF
+      outletname: light-three
+      mqttstatustopik: stat/gosund_p1_1_12FCA5/POWER3
+      mqttcommandtopik: cmnd/gosund_p1_1_12FCA5/POWER3
+  mqttstatetopik: tele/gosund_p1_1_12FCA5/STATE
+  mqtttelemetrytopik: tele/gosund_p1_1_12FCA5/SENSOR

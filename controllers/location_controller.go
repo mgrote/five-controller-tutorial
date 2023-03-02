@@ -59,9 +59,22 @@ func (r *LocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	powerStripList := &personaliotv1alpha1.PowerstripList{}
+	stripListOpts := &client.ListOptions{
+		Namespace:     location.Namespace,
+		FieldSelector: fields.SelectorFromSet(fields.Set{"spec.location": location.Name}),
+	}
+
+	var outletList []*personaliotv1alpha1.Poweroutlet
+	for _, strip := range powerStripList.Items {
+		for _, outlet := range strip.Spec.Outlets {
+			outletList = append(outletList, outlet)
+		}
+	}
+
 	// Check if deletion timestamp is added, switch off power outlet and delete finalizer.
 	if !location.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, location)
+		return r.reconcileDelete(ctx, outletList, location)
 	}
 
 	// Check if finalizer should be added or applied.
@@ -77,38 +90,27 @@ func (r *LocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	powerStripList := &personaliotv1alpha1.PowerstripList{}
-	stripListOpts := &client.ListOptions{
-		Namespace:     location.Namespace,
-		FieldSelector: fields.SelectorFromSet(fields.Set{"spec.location": location.Name}),
-	}
 	if err := r.List(ctx, powerStripList, stripListOpts); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	var outletList []*personaliotv1alpha1.Poweroutlet
-	for _, strip := range powerStripList.Items {
-		for _, outlet := range strip.Spec.Outlets {
-			outletList = append(outletList, outlet)
-		}
-	}
 	if len(outletList) == 0 {
 		return ctrl.Result{}, nil
 	}
 
 	switch location.Spec.Mood {
 	case personaliotv1alpha1.LocationMoodDark:
-		return r.reconcileDark(ctx, outletList)
+		return r.reconcileDark(ctx, outletList, location)
 	case personaliotv1alpha1.LocationMoodBright:
-		return r.reconcileBright(ctx, outletList)
+		return r.reconcileBright(ctx, outletList, location)
 	case personaliotv1alpha1.LocationMoodDontKnow:
-		return r.reconcileDontKnow(ctx, outletList)
+		return r.reconcileDontKnow(ctx, outletList, location)
 	}
 
 	return ctrl.Result{}, fmt.Errorf("location mood %s not recognised", location.Spec.Mood)
 }
 
-func (r *LocationReconciler) reconcileDark(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
+func (r *LocationReconciler) reconcileDark(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet, location *personaliotv1alpha1.Location) (ctrl.Result, error) {
 	for _, outlet := range outlets {
 		if outlet.Spec.Switch == internal.PowerOnSignal {
 			outlet.Spec.Switch = internal.PowerOffSignal
@@ -117,10 +119,12 @@ func (r *LocationReconciler) reconcileDark(ctx context.Context, outlets []*perso
 			}
 		}
 	}
-	return ctrl.Result{}, nil
+	location.Status.Mood = personaliotv1alpha1.LocationMoodDark
+	err := r.Update(ctx, location)
+	return ctrl.Result{}, err
 }
 
-func (r *LocationReconciler) reconcileBright(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
+func (r *LocationReconciler) reconcileBright(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet, location *personaliotv1alpha1.Location) (ctrl.Result, error) {
 	for _, outlet := range outlets {
 		if outlet.Spec.Switch == internal.PowerOffSignal {
 			outlet.Spec.Switch = internal.PowerOnSignal
@@ -129,10 +133,12 @@ func (r *LocationReconciler) reconcileBright(ctx context.Context, outlets []*per
 			}
 		}
 	}
-	return ctrl.Result{}, nil
+	location.Status.Mood = personaliotv1alpha1.LocationMoodBright
+	err := r.Update(ctx, location)
+	return ctrl.Result{}, err
 }
 
-func (r *LocationReconciler) reconcileDontKnow(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
+func (r *LocationReconciler) reconcileDontKnow(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet, location *personaliotv1alpha1.Location) (ctrl.Result, error) {
 	for _, outlet := range outlets {
 		if outlet.Spec.Switch == internal.PowerOffSignal {
 			outlet.Spec.Switch = internal.PowerOnSignal
@@ -147,7 +153,9 @@ func (r *LocationReconciler) reconcileDontKnow(ctx context.Context, outlets []*p
 			}
 		}
 	}
-	return ctrl.Result{}, nil
+	location.Status.Mood = personaliotv1alpha1.LocationMoodDontKnow
+	err := r.Update(ctx, location)
+	return ctrl.Result{}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -157,6 +165,15 @@ func (r *LocationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *LocationReconciler) reconcileDelete(ctx context.Context, location *personaliotv1alpha1.Location) (ctrl.Result, error) {
+func (r *LocationReconciler) reconcileDelete(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet, location *personaliotv1alpha1.Location) (ctrl.Result, error) {
+	// turn the lights off before you go
+	_, err := r.reconcileDark(ctx, outlets, location)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	controllerutil.RemoveFinalizer(location, personaliotv1alpha1.LocationFinalizer)
+	if err = r.Update(ctx, location); err != nil {
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
