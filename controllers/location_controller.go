@@ -130,7 +130,7 @@ func (r *LocationReconciler) reconcileDark(ctx context.Context, outlets []*perso
 		}
 	}
 	location.Status.Mood = personaliotv1alpha1.LocationMoodDark
-	err := r.Update(ctx, location)
+	err := r.Status().Update(ctx, location)
 	return err
 }
 
@@ -144,7 +144,7 @@ func (r *LocationReconciler) reconcileBright(ctx context.Context, outlets []*per
 		}
 	}
 	location.Status.Mood = personaliotv1alpha1.LocationMoodBright
-	return r.Update(ctx, location)
+	return r.Status().Update(ctx, location)
 }
 
 func (r *LocationReconciler) reconcileDontKnow(ctx context.Context, outlets []*personaliotv1alpha1.Poweroutlet, location *personaliotv1alpha1.Location) error {
@@ -162,7 +162,7 @@ func (r *LocationReconciler) reconcileDontKnow(ctx context.Context, outlets []*p
 		}
 	}
 	location.Status.Mood = personaliotv1alpha1.LocationMoodDontKnow
-	return r.Update(ctx, location)
+	return r.Status().Update(ctx, location)
 }
 
 // SetupWithManager sets up the controller with the Manager.
