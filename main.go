@@ -73,7 +73,6 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	var err error
-	//mqttControllerConfig, err := getConfig(configFile)
 
 	options := ctrl.Options{
 		Scheme:                 scheme,
