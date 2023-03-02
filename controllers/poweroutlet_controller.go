@@ -96,8 +96,6 @@ func (r *PoweroutletReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-//func (r *PoweroutletReconciler) reconcileState(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (ctrl.Result, error)
-
 func (r *PoweroutletReconciler) reconcileDelete(ctx context.Context, powerOutlet *personaliotv1alpha1.Poweroutlet) (ctrl.Result, error) {
 	if powerOutlet.Status.Switch == internal.PowerOnSignal {
 		powerOutlet.Spec.Switch = internal.PowerOffSignal
@@ -147,7 +145,7 @@ func (r *PoweroutletReconciler) reconcilePowerOutletState(ctx context.Context, p
 	// When subscribing the power outlet status topik, the first message delivers immediately the current state.
 	// The status change may come later, so we have to wait for the next messages.
 	var currentState string
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 10; i++ {
 		incoming := <-messageChannel
 		currentState = incoming.Msg
 		// TODO output improves the timing, think about a wait ;-).

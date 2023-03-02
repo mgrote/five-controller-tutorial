@@ -12,18 +12,18 @@ spec:
   location: tutorial-room
   poweroutlets:
   - spec:
-      switch: OFF
-      outletname: light-one
+      switch: 'OFF'
+      outletName: light-one
       mqttstatustopik: stat/gosund_p1_1_12FCA5/POWER1
       mqttcommandtopik: cmnd/gosund_p1_1_12FCA5/POWER1
   - spec:
-      switch: OFF
-      outletname: light-two
+      switch: 'OFF'
+      outletName: light-two
       mqttstatustopik: stat/gosund_p1_1_12FCA5/POWER2
       mqttcommandtopik: cmnd/gosund_p1_1_12FCA5/POWER2
   - spec:
-      switch: OFF
-      outletname: light-three
+      switch: 'OFF'
+      outletName: light-three
       mqttstatustopik: stat/gosund_p1_1_12FCA5/POWER3
       mqttcommandtopik: cmnd/gosund_p1_1_12FCA5/POWER3
   mqttstatetopik: tele/gosund_p1_1_12FCA5/STATE
