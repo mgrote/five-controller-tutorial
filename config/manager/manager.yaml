@@ -57,6 +57,9 @@ spec:
       #             values:
       #               - linux
       securityContext:
+        # Currently nonRoot deactivated due presentation purposes.
+        # Tilt will not run a live update due weak write right as nonRoot.
+        # A working solution with live update as nonRoot will be prepared.
         runAsNonRoot: false
         # TODO(user): For common cases that do not require escalating privileges
         # it is recommended to ensure that all your Pods/Containers are restrictive.
