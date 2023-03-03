@@ -9,8 +9,6 @@ spec:
       containers:
       - name: manager
         envFrom:
-#        - configMapRef:
-#            name: manager-config
         - secretRef:
             name: mqtt-broker-creds
 
