@@ -24,7 +24,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	personaliotv1alpha1 "github.com/mgrote/personal-iot/api/v1alpha1"
 	"github.com/mgrote/personal-iot/internal"
@@ -50,11 +49,8 @@ type LocationReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.1/pkg/reconcile
 func (r *LocationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("LocationReconciler", req.NamespacedName)
-
 	location := &personaliotv1alpha1.Location{}
 	if err := r.Get(ctx, req.NamespacedName, location); err != nil {
-		logger.Error(err, "unable to fetch power outlet")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
