@@ -124,11 +124,7 @@ func (r *PowerstripReconciler) reconcileDelete(ctx context.Context, powerStrip *
 			return ctrl.Result{}, err
 		}
 	}
-	// update existing outlets in status
-	//powerStrip.Status.Outlets = existingOutletNames
-	//if err = r.Status().Update(ctx, powerStrip); err != nil {
-	//	return ctrl.Result{}, err
-	//}
+
 	return ctrl.Result{Requeue: true}, nil
 }
 
