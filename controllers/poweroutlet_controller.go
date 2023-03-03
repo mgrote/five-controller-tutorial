@@ -57,7 +57,6 @@ func (r *PoweroutletReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	powerOutlet := &personaliotv1alpha1.Poweroutlet{}
 	if err := r.Get(ctx, req.NamespacedName, powerOutlet); err != nil {
-		logger.Error(err, "unable to fetch power outlet")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	logger.WithValues("switch", powerOutlet.Spec.Switch).Info("found power outlet")
