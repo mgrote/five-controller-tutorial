@@ -55,7 +55,6 @@ func (r *PowerstripReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	powerStrip := &personaliotv1alpha1.Powerstrip{}
 	if err := r.Get(ctx, req.NamespacedName, powerStrip); err != nil {
-		logger.Error(err, "unable to fetch power outlet")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -105,7 +104,8 @@ func (r *PowerstripReconciler) reconcileDelete(ctx context.Context, powerStrip *
 
 	// All outlets are deleted, it's safe to delete the power strip.
 	if len(outlets) == 0 {
-		controllerutil.RemoveFinalizer(powerStrip, personaliotv1alpha1.PowerOutletFinalizer)
+		powerStrip.Spec.Outlets = []*personaliotv1alpha1.Poweroutlet{}
+		controllerutil.RemoveFinalizer(powerStrip, personaliotv1alpha1.PowerStripFinalizer)
 		if err = r.Update(ctx, powerStrip); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -124,12 +124,8 @@ func (r *PowerstripReconciler) reconcileDelete(ctx context.Context, powerStrip *
 			return ctrl.Result{}, err
 		}
 	}
-	// update existing outlets in status
-	powerStrip.Status.Outlets = existingOutletNames
-	if err := r.Status().Update(ctx, powerStrip); err != nil {
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
+
+	return ctrl.Result{Requeue: true}, nil
 }
 
 func (r *PowerstripReconciler) checkOutletReachability(outlets []*personaliotv1alpha1.Poweroutlet) ([]string, error) {
