@@ -1,6 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  namespace: mqtt
   name: mosquitto-config
 data:
   mosquitto.conf: |-

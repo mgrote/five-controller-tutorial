@@ -20,6 +20,9 @@ Dockerfile.cross
 # env files with secrets
 *.env
 
+# shared storage kind cluster
+shared-storage
+
 # Kubernetes Generated files - skip generated files, except for vendored files
 
 !vendor/**/zz_generated.*
