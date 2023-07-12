@@ -1,0 +1,6 @@
+
+FROM ubuntu:20.04
+
+USER 65534
+
+ENTRYPOINT /bin/sh

@@ -1,7 +1,7 @@
 #### setup envtest
 - `make envtest` to download k8s api and etcd
 - `bin/setup-envtest use 1.25.0`
-- `cp ~/.local/share/kubebuilder-envtest/k8s bin/`
+- `cp -r ~/.local/share/kubebuilder-envtest/k8s bin/`
 - set path to executables with `KUBEBUILDER_ASSETS` in `controllers/suite_test.go`
 - check if your local gingko binary version fits the requested version in `go.mod`, if not upgrade   
 

@@ -32,14 +32,14 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -gcflags
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-#FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot
 
 # For debugging use a fully featured linux image.
-FROM ubuntu:jammy
+# FROM ubuntu:jammy
 WORKDIR /
 COPY --from=builder /workspace/dlv .
 COPY --from=builder /workspace/manager .
 EXPOSE 2345
 USER 65532:65532
-#ENTRYPOINT ["/manager"]
-ENTRYPOINT ["/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager-debug"]
+ENTRYPOINT ["/manager"]
+#ENTRYPOINT ["/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/manager-debug"]
