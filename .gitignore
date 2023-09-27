@@ -6,6 +6,7 @@
 *.so
 *.dylib
 bin
+dry-run/*
 testbin/*
 tilt_bin
 tilt_bin/*

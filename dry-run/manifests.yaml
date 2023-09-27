@@ -58,7 +58,12 @@ spec:
             description: LocationSpec defines the desired state of Location
             properties:
               mood:
+                default: DARK
                 description: The mood the location should be in.
+                enum:
+                - DARK
+                - BRIGHT
+                - DONTKNOW
                 type: string
             type: object
           status:
@@ -72,8 +77,6 @@ spec:
               mood:
                 description: The mood the location currently is.
                 type: string
-            required:
-            - mood
             type: object
         type: object
     served: true
@@ -602,6 +605,8 @@ metadata:
 ---
 apiVersion: v1
 data:
+  MQTT_BROKER: dGNwOi8vMTkyLjE2OC4wLjcwOjE4ODM=
+  MQTT_CLIENT_ID: cGVyc29uYWxJT1RDb250cm9sbGVy
   MQTT_PASS: aGl2ZW1x
   MQTT_USER: YWRtaW4=
 kind: Secret
@@ -695,17 +700,8 @@ spec:
                 - linux
       containers:
       - command:
-        - /dlv
-        - --listen=:2345
-        - --headless=true
-        - --api-version=2
-        - --accept-multiclient
-        - exec
         - /manager
-        - --
         envFrom:
-        - configMapRef:
-            name: personal-iot-manager-config
         - secretRef:
             name: personal-iot-mqtt-broker-creds
         image: mgrotedev/personal-iot:v1alpha1
